@@ -1,0 +1,5 @@
+﻿dir /b /a-d | findstr ".db$"
+
+cd C:\sqlite
+sqlite3 %1 %2 > %3out.txt
+pause
