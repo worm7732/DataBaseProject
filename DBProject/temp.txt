@@ -3,3 +3,18 @@
 cd C:\sqlite
 sqlite3 %1 %2 > %3out.txt
 pause
+
+
+//startInfo.Arguments = "/K " + path + "runSQL " + database + " " + preferences + " " + command + " " + path; 
+//startInfo.Arguments = "/K " + path + "runSQL " + database + " " + path;
+// String input = "/K " + path + "sqlite3 " + path + database + " < " + path + "in.txt > " + path + "out.txt";
+//Console.Out.WriteLine(input);
+
+
+
+//List<String> result = getResult();
+
+foreach (string str in elements)
+                {
+                    Console.Out.WriteLine(str);
+                }
