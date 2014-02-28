@@ -1,2 +1,0 @@
-.header on
-SELECT * FROM COMPANY;

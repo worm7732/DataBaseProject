@@ -117,32 +117,42 @@ namespace DBProject
 
         private void fill_dataGrid(List<String> result)
         {
-            char[] delim = {'|'};
-            for (int i = 0; i < result.Count; i++ )
+            if (result.Count > 0)
             {
-                string[] elements = result.ElementAt(i).Split(delim);
- 
-                if (i == 0)
+
+                char[] delim = { '|' };
+                for (int i = 0; i < result.Count; i++)
                 {
-                    //setup grid
-                    dataGridView1.Rows.Clear();
-                    dataGridView1.ColumnCount = elements.Length;
-                    dataGridView1.Visible = true;
-                    dataGridView1.ColumnHeadersVisible = true;
-                    DataGridViewCellStyle columnHeaderStyle = new DataGridViewCellStyle();
-                    columnHeaderStyle.BackColor = Color.Beige;
-                    columnHeaderStyle.Font = new Font("Verdana", 10, FontStyle.Bold);
-                    dataGridView1.ColumnHeadersDefaultCellStyle = columnHeaderStyle;
-                    for (int j = 0; j < elements.Length; j++)
+                    string[] elements = result.ElementAt(i).Split(delim);
+
+                    if (i == 0)
                     {
-                        dataGridView1.Columns[j].Name = elements[j];
+                        //setup grid
+                        dataGridView1.Rows.Clear();
+                        dataGridView1.ColumnCount = elements.Length;
+                        dataGridView1.Visible = true;
+                        dataGridView1.ColumnHeadersVisible = true;
+                        DataGridViewCellStyle columnHeaderStyle = new DataGridViewCellStyle();
+                        columnHeaderStyle.BackColor = Color.Beige;
+                        columnHeaderStyle.Font = new Font("Verdana", 10, FontStyle.Bold);
+                        dataGridView1.ColumnHeadersDefaultCellStyle = columnHeaderStyle;
+                        for (int j = 0; j < elements.Length; j++)
+                        {
+                            dataGridView1.Columns[j].Name = elements[j];
+                        }
                     }
+                    else
+                    {
+                        dataGridView1.Rows.Add(elements);
+                    }
+                    //Console.Out.WriteLine(result.ElementAt(i) + "!!!!!!!!!!!!!!!!!!!!!!!!!");
                 }
-                else
-                {
-                    dataGridView1.Rows.Add(elements);
-                }
-                //Console.Out.WriteLine(result.ElementAt(i) + "!!!!!!!!!!!!!!!!!!!!!!!!!");
+            }
+            else
+            {
+                dataGridView1.Rows.Clear();
+                dataGridView1.Visible = false;
+                MessageBox.Show("This query returned no results");
             }
         }
 
@@ -202,6 +212,26 @@ namespace DBProject
 
 
             
+        }
+
+        private void createDatabaseToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (Create_Database form = new Create_Database(database_names))
+            {
+                form.ShowDialog();
+                database = form.DB_name;
+                textBox1.Text = "Current database is " + database;
+                is_there_a_DB = true;
+                is_there_a_DB = true;
+                Size size = TextRenderer.MeasureText(textBox1.Text, textBox1.Font);
+                textBox1.Width = size.Width;
+                textBox1.Height = size.Height;
+                dataGridView1.Rows.Clear();
+                dataGridView1.Visible = false;
+                string arg = "/C " + path + "sqlite3 " + path + database + " < " + path + "makeDB.txt";
+                run_command(arg);
+                database_names.Add(database);
+            }
         }
     }
 }
