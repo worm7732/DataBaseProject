@@ -18,3 +18,18 @@ foreach (string str in elements)
                 {
                     Console.Out.WriteLine(str);
                 }
+
+
+				 private void listView1_DoubleClick(object sender, EventArgs e)
+        {
+            Console.WriteLine("CLIKED");
+            if (listView1.SelectedItems.Count > 0)
+            {
+                ListViewItem item = listView1.SelectedItems[0];
+                MessageBox.Show(item.ToString());
+            }
+        }
+
+
+
+MessageBox.Show("Item = " + listViewItem.Text);
