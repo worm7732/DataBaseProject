@@ -56,6 +56,7 @@
     <Compile Include="Create_Database.Designer.cs">
       <DependentUpon>Create_Database.cs</DependentUpon>
     </Compile>
+    <Compile Include="DB_table.cs" />
     <Compile Include="Main.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -70,6 +71,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QueryState.cs" />
     <EmbeddedResource Include="Create_Database.resx">
       <DependentUpon>Create_Database.cs</DependentUpon>
     </EmbeddedResource>
