@@ -12,6 +12,8 @@ namespace DBProject
     {
 
         public static Dictionary<string, string> allPK = new Dictionary<string, string>(); // pk -> tname
+        public static HashSet<string> allAttributes = new HashSet<string>();
+        public static HashSet<string> allTables = new HashSet<string>();
 
         public string table_name = "";   //name of table
         public List<String> primary_keys = new List<String>(); //list of pks
@@ -20,7 +22,9 @@ namespace DBProject
 
         public DB_table(string name, List<String> columns)
         {
-            table_name = name; 
+            allAttributes.Add("*");
+            table_name = name;
+            allTables.Add(name.ToLower());
             pk_count = 0;
             //Console.Out.WriteLine(name + " ???????");
             foreach (string str in columns)
@@ -38,12 +42,13 @@ namespace DBProject
                                 pk_count++;
                                 attributes.Add(fin[0], fin);
                                 allPK.Add(fin[0], name);
+                                allAttributes.Add(fin[0].ToLower());
                             }else
                             {
                                 MessageBox.Show("Multiple Primary Keys with Same name. Table will not be loaded");
                             }
                         }else{
-                        
+                            allAttributes.Add(fin[0].ToLower());
                             attributes.Add(fin[0], fin);
                         }
                     }

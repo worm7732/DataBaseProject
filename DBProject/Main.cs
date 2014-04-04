@@ -18,14 +18,17 @@ namespace DBProject
     {
         String sql, database, path;
         List<String> database_names;// = new List<String>(); // names of databases
-        bool is_there_a_DB = false;
+        Parser queryParser = new Parser(); // parser
         List<String> table_names = new List<String>(); //table names in database
         Dictionary<string, DB_table> tables = new Dictionary<string, DB_table>(); // hashtable for tables
+
+
         List<String> selected_row_index = new List<String>();
         List<String> selected_column_index = new List<String>();
         List<String> current_columns = new List<String>();
         QueryState QS = new QueryState();
-
+        
+        
         private void reset_in_out()
         {
             string[] reset_file = { };
@@ -102,7 +105,6 @@ namespace DBProject
             {
                 database = database_names.ElementAt(0);
                 textBox1.Text = "Current database is " + database;
-                is_there_a_DB = true;
             }
             else
             {
@@ -139,15 +141,6 @@ namespace DBProject
             process.WaitForExit();
         }
 
-        private void setQS()
-        {
-            QS.table.Add("COMPANY");
-            QS.star = true;
-            QS.select = true;
-            QS.join = false;
-            QS.where = false;
-        }
-
         //execute query
         private void button1_Click(object sender, EventArgs e)
         {
@@ -162,7 +155,6 @@ namespace DBProject
                 string arg = "/C " + path + "sqlite3 " + path + database + " < " + path + "in.txt > " + path + "out.txt";
                 run_command(arg);
                 //populate result table
-                //setQS();
                 fill_dataGrid(getResult());
                 //TODO: reset in.txt and string sql
                 //reset_in();
@@ -180,7 +172,6 @@ namespace DBProject
 
             if (result.Count > 0)
             {
-                current_columns.Clear();
                 char[] delim = { '|' };
                 for (int i = 0; i < result.Count; i++)
                 {
@@ -200,15 +191,7 @@ namespace DBProject
                         for (int j = 0; j < elements.Length; j++)
                         {
                             dataGridView1.Columns[j].Name = elements[j];
-                            //Console.Out.WriteLine(elements[j] + "  11111111111111111");
-                            //QS.column.Add(elements[j]);
-                            //foreach (string s in QS.table)
-                            //{
-                            //    if (tables[s].primary_keys.Contains(elements[j]))
-                            //    {
-                            //        QS.pk.Add(elements[j]);
-                            //    }
-                            //}
+                            
                         }
                     }
                     else
@@ -230,7 +213,34 @@ namespace DBProject
         {
 
             sql = richTextBox1.Text;
-            //Console.Out.WriteLine(sql);
+            
+            queryParser.parse(sql);
+            foreach(string word in queryParser.colorMapping.Keys)
+            {
+                //Console.Out.WriteLine(pair[0] + " " + pair[1]);
+                int myPosition = richTextBox1.Find(word);
+                if (myPosition >= 0)
+                {
+                    richTextBox1.SelectionStart = myPosition;
+                    richTextBox1.SelectionLength = word.Length;
+                    string check = queryParser.colorMapping[word];
+                    if (check == "keyword")
+                    {
+                        richTextBox1.SelectionColor = Color.Red;
+                    }
+                    else if (check == "table")
+                    {
+                        richTextBox1.SelectionColor = Color.Blue;
+                    }
+                    else if (check == "attribute")
+                    {
+                        richTextBox1.SelectionColor = Color.Green;
+                    }
+                }
+                richTextBox1.SelectionStart = sql.Length;
+                richTextBox1.SelectionLength = 0;
+            }
+            
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
@@ -270,7 +280,6 @@ namespace DBProject
                 {
                     database = form.DB_selected;
                     textBox1.Text = "Current database is " + database;
-                    is_there_a_DB = true;
                     Size size = TextRenderer.MeasureText(textBox1.Text, textBox1.Font);
                     textBox1.Width = size.Width;
                     textBox1.Height = size.Height;
@@ -291,8 +300,6 @@ namespace DBProject
                 form.ShowDialog();
                 database = form.DB_name;
                 textBox1.Text = "Current database is " + database;
-                is_there_a_DB = true;
-                is_there_a_DB = true;
                 Size size = TextRenderer.MeasureText(textBox1.Text, textBox1.Font);
                 textBox1.Width = size.Width;
                 textBox1.Height = size.Height;
