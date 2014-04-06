@@ -326,200 +326,190 @@ namespace DBProject
             }
         }
 
+        private void primaryKeyOptions()
+        {
+            string newSQL = "SELECT ";
+            bool notfirst = false;
+            string currentTable = "";
+            int pkInt = -1;
+            string pkString = "";
+            string tablePART = "";
+            //determine table
+            if (queryParser.tables.Count == 1)
+            {
+                currentTable = queryParser.tables[0];
+            }
+            //build attr list
+            if (DBtables[currentTable].attributes.Count == selectedCells.ElementAt(0).Value.Count)
+            {
+                tablePART = " * ";
+            }
+            else
+            {
+                foreach (int i in selectedCells.ElementAt(0).Value)
+                {
+                    //Console.Out.WriteLine(dataGridView1.Columns[i].Name);
+                    if (notfirst)
+                    {
+                        tablePART += ", ";
+                    }
+                    tablePART += dataGridView1.Columns[i].Name + " ";
+                    notfirst = true;
+                    if (DB_table.allPK.ContainsKey(dataGridView1.Columns[i].Name.ToLower()))
+                    {
+                        pkString = dataGridView1.Columns[i].Name.ToLower();
+                        pkInt = i;
+                    }
+                }
+            }
+            newSQL += tablePART + " FROM " + currentTable + " WHERE ";
+
+            //pk is in relation
+            if (pkInt > -1)
+            {
+                notfirst = false;
+                foreach (int row in selectedCells.Keys)
+                {
+                    if (notfirst)
+                    {
+                        newSQL += " or ";
+                    }
+                    newSQL += pkString + " = " + dataGridView1[pkInt, row].Value.ToString() + " ";
+                    notfirst = true;
+                }
+                possibleQueries.Add(newSQL + ";");
+            }
+            //need to find pk value
+            else
+            {
+                //get choices of tables
+                List<String> table_choices = new List<String>();
+                foreach (DB_table table in DBtables.Values)
+                {
+                    bool choice = true;
+                    foreach (int col in selectedCells.ElementAt(0).Value)
+                    {
+                        if (!table.attributes.ContainsKey(dataGridView1.Columns[col].Name.ToLower()))
+                        {
+                            choice = false;
+                        }
+                    }
+                    if (choice)
+                    {
+                        table_choices.Add(table.table_name);
+                    }
+                }
+
+                // get pk of selected rows
+                if (table_choices.Count == 1)
+                {
+                    pkString = DBtables[table_choices[0]].primary_keys[0];
+                    bool needOR = false;
+                    //where clause
+                    string where = "";
+                    foreach (int row in selectedCells.Keys)
+                    {
+                        if (needOR)
+                        {
+                            where += " or ";
+                        }
+                        where += "(";
+                        notfirst = false;
+                        foreach (int col in selectedCells[row])
+                        {
+                            if (notfirst)
+                            {
+                                where += " and ";
+                            }
+                            //newSQL += pkString + " = " + DBtables[table_choices[0]].attributes[pkString][0] + " ";
+                            where += dataGridView1.Columns[col].Name.ToLower() + " = ";
+                            //Console.Out.WriteLine(DBtables[table_choices[0]].attributes[dataGridView1.Columns[col].Name.ToLower()][1]);
+                            string type = DBtables[table_choices[0]].attributes[dataGridView1.Columns[col].Name.ToLower()][1];
+                            //Console.Out.WriteLine(type);
+                            if (type != "int")// || type = )
+                            {
+                                where += "\"" + dataGridView1[col, row].Value.ToString() + "\"";
+                            }
+                            else
+                            {
+                                where += dataGridView1[col, row].Value.ToString();
+                            }
+                            notfirst = true;
+                        }
+                        where += ")";
+                        needOR = true;
+                    }
+                    //newSQL += where;
+
+                    string extraSQL = "SELECT " + pkString + " FROM " + table_choices[0] + " WHERE ";
+                    extraSQL += where.Replace("\"", "\\\"") + ";";
+                    string arg = "/C " + path + "sqlite3 " + path + database + " \"" + extraSQL + "\" > " + path + "out.txt";
+                    //Console.Out.WriteLine(arg);
+                    run_command(arg);
+                    string finalSQL = newSQL;
+
+                    notfirst = false;
+                    foreach (string str in getResult())
+                    {
+                        if (notfirst)
+                        {
+                            finalSQL += " or ";
+                        }
+                        notfirst = true;
+                        finalSQL += pkString + " = " + str;
+                    }
+                    // Console.Out.WriteLine(finalSQL);
+                    newSQL += where + ";";
+                    possibleQueries.Add(newSQL);
+                    newSQL = finalSQL + ";";
+                    possibleQueries.Add(newSQL);
+                }
+            }
+        }
+
+        private void pickQuery(object sender, EventArgs e)
+        {
+            Console.Out.WriteLine(possibleQueries.Count + " = number of  possible!!");
+            foreach (string str in possibleQueries)
+            {
+                Console.Out.WriteLine(str + "           possible!!");
+            }
+            sql = possibleQueries[possibleQueries.Count - 1];
+            Console.Out.WriteLine(sql + "           chosen!!");
+            richTextBox1.Text = sql;
+            button1_Click(sender, e);
+        }
         //reverse engineer
         private void button2_Click(object sender, EventArgs e)
         {
             possibleQueries.Clear();
-            string newSQL = "SELECT ";
             if (dataGridView1.Visible == false)
             {
                 MessageBox.Show("Nothing is selected.");
             }
             else
             {
-                //whole rows in grid are selected
-                //Console.Out.WriteLine(dataGridView1.SelectedRows.Count);
-                if (dataGridView1.SelectedRows.Count > 0)
+                setSelectedCells();
+                if (checkCells() == "Valid Selection")
                 {
-                    if (QS.star)
-                    {
-                        newSQL += "* FROM ";
-                    }
-                    if (queryParser.tables.Count == 1)
-                    {
-                        //Console.Out.WriteLine(" one table           1111111111");
-                        newSQL += queryParser.tables[0] + " ";
-                    }
-
-                    newSQL += "WHERE ";
-                    
-                    for (int counter = 0; counter < (dataGridView1.SelectedRows.Count); counter++)
-                    {
-                        //Console.Out.WriteLine(counter + "      1111111)");
-                        if (counter > 0)
-                        {
-                            newSQL += "or ";
-                        }
-                        int row = dataGridView1.SelectedRows[counter].Index;
-                        //primary key is in relation
-                       // Console.Out.WriteLine(QS.pkMap.Count + "      pkmapcount)");
-                        if (QS.pkMap.Count == 1)
-                        {
-                            string key = "";
-                            foreach (string temp in QS.pkMap.Keys)
-                            {
-                                
-                                key = temp;
-                            }
-                            //newSQL += key + " = " + dataGridView1.Rows[row].DataGridView.Columns[QS.pkMap[key]];
-                            newSQL += key + " = " + dataGridView1[QS.pkMap[key],row].Value.ToString() + " ";
-                    
-                        }
-                    }
-                    
+                    Console.Out.WriteLine("valid selection!!!!");
+                    primaryKeyOptions();
+                    pickQuery(sender, e);
                 }
-                //items in grid are selected
-                else
+                else if (checkCells() == "Invalid Selection")
                 {
-                    setSelectedCells();
-                    if (checkCells())
-                    {
-                        bool notfirst = false;
-                        string currentTable = "";
-                        int pkInt = -1;
-                        string pkString = "";
-                        foreach (int i in selectedCells.ElementAt(0).Value)
-                        {
-                            //Console.Out.WriteLine(dataGridView1.Columns[i].Name);
-                            if (notfirst)
-                            {
-                                newSQL += ", ";
-                            }
-                            newSQL += dataGridView1.Columns[i].Name + " ";
-                            notfirst = true;
-                            if (DB_table.allPK.ContainsKey(dataGridView1.Columns[i].Name.ToLower()))
-                            {
-                                pkString = dataGridView1.Columns[i].Name.ToLower();
-                                pkInt = i;
-                            }
-                        }
-                        newSQL += "FROM ";
-                        if (queryParser.tables.Count == 1)
-                        {
-                            //Console.Out.WriteLine(" one table           1111111111");
-                            currentTable = queryParser.tables[0];
-                            newSQL += currentTable + " ";
-                        }
-                        newSQL += "WHERE ";
-                        //pk is in relation
-                        if (pkInt > -1)
-                        {
-                            notfirst = false;
-                            foreach(int row in selectedCells.Keys)
-                            {
-                                if (notfirst)
-                                {
-                                    newSQL += " or ";
-                                }
-                                newSQL += pkString + " = " + dataGridView1[pkInt, row].Value.ToString() + " ";
-                                notfirst = true;
-                            }
-                        }
-                            //need to find pk value
-                        else
-                        {
-                            //get choices of tables
-                            List<String> table_choices = new List<String>();
-                            foreach(DB_table table in DBtables.Values)
-                            {
-                                bool choice = true;
-                                foreach (int col in selectedCells.ElementAt(0).Value)
-                                {
-                                    if (!table.attributes.ContainsKey(dataGridView1.Columns[col].Name.ToLower()))
-                                    {
-                                        choice = false;
-                                    }
-                                }
-                                if (choice)
-                                {
-                                    table_choices.Add(table.table_name);
-                                }
-                            }
-
-                            Console.Out.WriteLine("Number of table choices = " + table_choices.Count);
-                            // get pk of selected rows
-                            if (table_choices.Count == 1)
-                            {
-                                Console.Out.WriteLine("Table choices = " + table_choices[0]);
-                                pkString = DBtables[table_choices[0]].primary_keys[0];
-                                bool needOR = false;
-                                string extraSQL = "SELECT " + pkString + " FROM " + table_choices[0] + " WHERE ";
-                                string where = "";
-                                foreach (int row in selectedCells.Keys)
-                                {
-                                    if (needOR)
-                                    {
-                                        where += " or ";
-                                    }
-                                    where += "(";
-                                    notfirst = false;
-                                    foreach (int col in selectedCells[row])
-                                    {
-                                        if (notfirst)
-                                        {
-                                            where += " and ";
-                                        }
-                                        //newSQL += pkString + " = " + DBtables[table_choices[0]].attributes[pkString][0] + " ";
-                                        where += dataGridView1.Columns[col].Name.ToLower() + " = ";
-                                        Console.Out.WriteLine(DBtables[table_choices[0]].attributes[dataGridView1.Columns[col].Name.ToLower()][1]);
-                                        if (DBtables[table_choices[0]].attributes[dataGridView1.Columns[col].Name.ToLower()][1] == "text")
-                                        {
-                                            where += "\"" + dataGridView1[col, row].Value.ToString() + "\"";
-                                        }
-                                        else
-                                        {
-                                            where += dataGridView1[col, row].Value.ToString();
-                                        }
-                                        notfirst = true;
-                                    }
-                                    where += ")";
-                                    needOR = true;
-                                }
-                                //newSQL += where;
-                                extraSQL += where.Replace("\"","\\\"") + ";";
-                                string arg = "/C " + path + "sqlite3 " + path + database + " \"" + extraSQL + "\" > " + path + "out.txt";
-                                //Console.Out.WriteLine(arg);
-                                run_command(arg);
-                                string finalSQL = newSQL + pkString + " = ";
-                                
-                                notfirst = false;
-                                foreach (string str in getResult())
-                                {
-                                    if (notfirst)
-                                    {
-                                        finalSQL += " or ";
-                                    }
-                                    notfirst = true;
-                                    finalSQL += str;
-                                }
-                                Console.Out.WriteLine(finalSQL);
-                                newSQL += where;
-                                newSQL = finalSQL;
-                            }
-                        }
-
-                    }
-                    else
-                    {
-                        MessageBox.Show("Invalid selection: Please try again.");
-                    }
+                    MessageBox.Show("Invalid selection: Please try again.");
                 }
-                Console.Out.WriteLine(newSQL + "           new sql!");
-                newSQL += ";";
-                possibleQueries.Add(newSQL);
-                sql = newSQL;
-                richTextBox1.Text = sql;
-                button1_Click(sender, e);
+                else if (checkCells() == "Invalid Insert")
+                {
+                    MessageBox.Show("Invalid Insert. Last row can only be chosen by itself.");
+                }
+                else if (checkCells() == "Valid Insert")
+                {
+                    //MessageBox.Show("Invalid Insert. Last row can only be chosen by itself.");
+                    Console.Out.WriteLine("insertion!!!!");
+                }
+                
             }
         }
 
@@ -527,15 +517,17 @@ namespace DBProject
         private void setSelectedCells()
         {
             selectedCells.Clear();
-            for (int row = 0; row < dataGridView1.RowCount - 1; row++)
+            for (int row = 0; row < dataGridView1.RowCount; row++)
             {
                 HashSet<int> add = new HashSet<int>();
-                for (int col = 0; col < dataGridView1.ColumnCount - 1; col++)
+                for (int col = 0; col < dataGridView1.ColumnCount; col++)
                 {
                    
                     //Console.Out.WriteLine(dataGridView1[col, row].Value.ToString());
+                    
                     if (dataGridView1[col, row].Selected == true)
                     {
+                        //Console.Out.WriteLine(col + "    " + row);
                         add.Add(col);
                     }
                 }
@@ -549,7 +541,7 @@ namespace DBProject
 
         }
 
-        private bool checkCells()
+        private string checkCells()
         {
             HashSet<int> check = new HashSet<int>();
             bool first = true;
@@ -566,7 +558,7 @@ namespace DBProject
                     {
                         if (!check.Contains(col))
                         {
-                            return false;
+                            return "Invalid Selection";
                         }
                     }
                     Console.Out.Write(col + " ");
@@ -574,7 +566,20 @@ namespace DBProject
                 Console.Out.WriteLine();
                 first = false;
             }
-            return true;
+            Console.Out.WriteLine(dataGridView1.RowCount - 1 + "      number of selected rows");
+            if (selectedCells.Keys.Contains(dataGridView1.RowCount - 1))
+            {
+                Console.Out.WriteLine(check.Count + "      number of selected rows");
+                if (selectedCells.Count > 1)
+                {
+                    return "Invalid Insert";
+                }
+                else
+                {
+                    return "Valid Insert";
+                }
+            }
+            return "Valid Selection";
         }
 
     }

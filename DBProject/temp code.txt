@@ -36,3 +36,50 @@ MessageBox.Show("Item = " + listViewItem.Text);
 
 
 Console.Out.WriteLine
+
+
+/whole rows in grid are selected
+                //Console.Out.WriteLine(dataGridView1.SelectedRows.Count);
+                if (dataGridView1.SelectedRows.Count > 1000)
+                {
+                    
+                }
+                //items in grid are selected
+                else
+                {
+
+if (QS.star)
+                    {
+                        newSQL += "* FROM ";
+                    }
+                    if (queryParser.tables.Count == 1)
+                    {
+                        //Console.Out.WriteLine(" one table           1111111111");
+                        newSQL += queryParser.tables[0] + " ";
+                    }
+
+                    newSQL += "WHERE ";
+                    
+                    for (int counter = 0; counter < (dataGridView1.SelectedRows.Count); counter++)
+                    {
+                        //Console.Out.WriteLine(counter + "      1111111)");
+                        if (counter > 0)
+                        {
+                            newSQL += "or ";
+                        }
+                        int row = dataGridView1.SelectedRows[counter].Index;
+                        //primary key is in relation
+                       // Console.Out.WriteLine(QS.pkMap.Count + "      pkmapcount)");
+                        if (QS.pkMap.Count == 1)
+                        {
+                            string key = "";
+                            foreach (string temp in QS.pkMap.Keys)
+                            {
+                                
+                                key = temp;
+                            }
+                            //newSQL += key + " = " + dataGridView1.Rows[row].DataGridView.Columns[QS.pkMap[key]];
+                            newSQL += key + " = " + dataGridView1[QS.pkMap[key],row].Value.ToString() + " ";
+                    
+                        }
+                    }
