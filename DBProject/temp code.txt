@@ -33,3 +33,6 @@ foreach (string str in elements)
 
 
 MessageBox.Show("Item = " + listViewItem.Text);
+
+
+Console.Out.WriteLine

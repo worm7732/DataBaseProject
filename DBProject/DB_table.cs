@@ -32,16 +32,16 @@ namespace DBProject
                 if (str.Length > 0)
                 {
                     string[] attr = str.Split('|');
-                    string[] fin = { attr[1], attr[2], attr[3], attr[5] };
+                    string[] fin = { attr[1].ToLower(), attr[2].ToLower(), attr[3].ToLower(), attr[5].ToLower() };
                     
                         if (fin[3] == "1")
                         {
                             if (!allPK.ContainsKey(fin[0]))
                             {
-                                primary_keys.Add(fin[0]);
+                                primary_keys.Add(fin[0].ToLower());
                                 pk_count++;
-                                attributes.Add(fin[0], fin);
-                                allPK.Add(fin[0], name);
+                                attributes.Add(fin[0].ToLower(), fin);
+                                allPK.Add(fin[0].ToLower(), name);
                                 allAttributes.Add(fin[0].ToLower());
                             }else
                             {
@@ -49,7 +49,7 @@ namespace DBProject
                             }
                         }else{
                             allAttributes.Add(fin[0].ToLower());
-                            attributes.Add(fin[0], fin);
+                            attributes.Add(fin[0].ToLower(), fin);
                         }
                     }
                    

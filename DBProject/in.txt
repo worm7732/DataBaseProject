@@ -1,0 +1,2 @@
+.header on
+SELECT NAME , AGE FROM COMPANY WHERE (name = "Allen" and age = 25) or (name = "Truman" and age = 10);

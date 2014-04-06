@@ -32,6 +32,7 @@ namespace DBProject
             keywords.Add("into");
             keywords.Add("values");
             keywords.Add("or");
+            keywords.Add("and");
         }
 
         public void clear()
