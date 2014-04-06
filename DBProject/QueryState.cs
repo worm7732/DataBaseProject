@@ -7,9 +7,10 @@ namespace DBProject
 {
     class QueryState
     {
-        public List<string> pk = new List<string>();
-        public List<string> table = new List<string>();
-        public List<string> column = new List<string>();
+        public  Dictionary<string, int> pkMap = new Dictionary<string, int>();
+        public Dictionary<string, int> attMap = new Dictionary<string, int>();
+        public List<string> tables = new List<string>();
+        
         public bool join = false;
         public bool star = false;
         public bool select = false;
@@ -21,9 +22,9 @@ namespace DBProject
         }
         public void clear()
         {
-            pk.Clear();
-            table.Clear();
-            column.Clear();
+            pkMap.Clear();
+            tables.Clear();
+            attMap.Clear();
             join = false;
             star = false;
             select = false;

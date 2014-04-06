@@ -19,11 +19,7 @@ namespace DBProject
         String sql, database, path;
         List<String> database_names;// = new List<String>(); // names of databases
         Parser queryParser = new Parser(); // parser
-        List<String> table_names = new List<String>(); //table names in database
-        Dictionary<string, DB_table> tables = new Dictionary<string, DB_table>(); // hashtable for tables
-
-
-        List<String> selected_row_index = new List<String>();
+        Dictionary<string, DB_table> DBtables = new Dictionary<string, DB_table>(); // hashtable for DBtables
         List<String> selected_column_index = new List<String>();
         List<String> current_columns = new List<String>();
         QueryState QS = new QueryState();
@@ -49,34 +45,25 @@ namespace DBProject
             string arg = "/C " + path + "sqlite3 " + path + database + " .tables > " + path + "out.txt";
             run_command(arg);
             foreach(string strings in getResult()){
-                string[] strs = strings.Split(' ');
-                foreach (string s in strs)
+                string[] tables = strings.Split(' ');
+                foreach (string table in tables)
                 {
-                    if (s.Length > 0)
+                    if (table.Length > 0)
                     {
-                        //Console.Out.WriteLine(s + " 1111111");
-                        table_names.Add(s);
-                    }
+                        arg = "/C " + path + "sqlite3 " + path + database + " \"PRAGMA table_info(" + table + ")\" > " + path + "out.txt";
+                        //Console.Out.WriteLine(arg);
+                        run_command(arg);
+
+                        DBtables.Add(table, new DB_table(table, getResult()));
+                        listBox1.Items.Add(table);
+
+                        foreach (string[] s in DBtables[table].attributes.Values)
+                        {
+                            listBox1.Items.Add("    " + s[0]);
+                        }
+
+                     }
                 }
-            }
-            
-           
-            foreach (string str in table_names)
-            {
-
-                //Console.Out.WriteLine(str + " !!!!!!!!!!!!!!!!!!");
-                arg = "/C " + path + "sqlite3 " + path + database + " \"PRAGMA table_info(" + str + ")\" > " + path + "out.txt";
-                //Console.Out.WriteLine(arg);
-                run_command(arg);
-
-                tables.Add(str, new DB_table(str, getResult()));
-                listBox1.Items.Add(str);
-
-                foreach (string[] s in tables[str].attributes.Values)
-                {
-                    listBox1.Items.Add("    " + s[0]);
-                }
-
             }
         }
 
@@ -117,7 +104,6 @@ namespace DBProject
             load_DB();
             //set sql command to null
             sql = "";
-            //listBox1.Items.Add("COMPANY");
             
 
         }
@@ -146,8 +132,6 @@ namespace DBProject
         {
             if (sql.Length > 0)
             {
-                //Console.Out.WriteLine(sql);
-                //run button
                 //create file to send to sqlite
                 string[] write_to_in = { ".header on", sql};
                 System.IO.File.WriteAllLines(@path + "in.txt", write_to_in);
@@ -156,9 +140,7 @@ namespace DBProject
                 run_command(arg);
                 //populate result table
                 fill_dataGrid(getResult());
-                //TODO: reset in.txt and string sql
-                //reset_in();
-                //sql = "";
+             
             }
             else
             {
@@ -168,7 +150,12 @@ namespace DBProject
 
         private void fill_dataGrid(List<String> result)
         {
-
+            QS.clear();
+            if(queryParser.colorMapping.ContainsKey("*"))
+            {
+                //Console.Out.WriteLine(  "*           1111111111");
+                QS.star = true;
+            }
 
             if (result.Count > 0)
             {
@@ -190,8 +177,15 @@ namespace DBProject
                         dataGridView1.ColumnHeadersDefaultCellStyle = columnHeaderStyle;
                         for (int j = 0; j < elements.Length; j++)
                         {
-                            dataGridView1.Columns[j].Name = elements[j];
+                            string str = elements[j];
+                            dataGridView1.Columns[j].Name = str;
                             
+                            if (DB_table.allPK.ContainsKey(str))
+                            {
+                                QS.pkMap.Add(str, j);
+                                //Console.Out.WriteLine(str + "           1111111111");
+                            }
+                            QS.attMap.Add(str, j);
                         }
                     }
                     else
@@ -213,17 +207,18 @@ namespace DBProject
         {
 
             sql = richTextBox1.Text;
-            
+            queryParser.clear();
             queryParser.parse(sql);
             foreach(string word in queryParser.colorMapping.Keys)
             {
-                //Console.Out.WriteLine(pair[0] + " " + pair[1]);
+                
                 int myPosition = richTextBox1.Find(word);
                 if (myPosition >= 0)
                 {
                     richTextBox1.SelectionStart = myPosition;
                     richTextBox1.SelectionLength = word.Length;
                     string check = queryParser.colorMapping[word];
+                    Console.Out.WriteLine(word + " " + check);
                     if (check == "keyword")
                     {
                         richTextBox1.SelectionColor = Color.Red;
@@ -236,9 +231,15 @@ namespace DBProject
                     {
                         richTextBox1.SelectionColor = Color.Green;
                     }
+                    else if (check == "other")
+                    {
+                        richTextBox1.SelectionColor = Color.Black;
+                    }
                 }
+                
                 richTextBox1.SelectionStart = sql.Length;
                 richTextBox1.SelectionLength = 0;
+                richTextBox1.SelectionColor = Color.Black;
             }
             
         }
@@ -314,19 +315,42 @@ namespace DBProject
         //reverse engineer
         private void button2_Click(object sender, EventArgs e)
         {
+            string newSQL = "SELECT ";
             if (dataGridView1.Visible == false)
             {
                 MessageBox.Show("Nothing is selected.");
             }
             else
             {
-                setSelectedCells();      
-                //whole rows in grid are selected
-                if (selected_row_index.Count > 0)
+                if (QS.star)
                 {
-                    foreach (string s in selected_row_index)
+                    newSQL += "* FROM ";
+                }
+                if (queryParser.tables.Count == 1)
+                {
+                    //Console.Out.WriteLine(" one table           1111111111");
+                    newSQL += queryParser.tables[0] + " ";
+                }
+                //setSelectedCells();      
+                //whole rows in grid are selected
+                if (dataGridView1.SelectedRows.Count > 0)
+                {
+                    newSQL += "WHERE ";
+                    
+                    for (int counter = 0; counter < (dataGridView1.SelectedRows.Count); counter++)
                     {
-                        
+                        int row = dataGridView1.SelectedRows[counter].Index;
+                        //primary key is in relation
+                        if (QS.pkMap.Count == 1)
+                        {
+                            string key = "";
+                            foreach (string temp in QS.pkMap.Keys)
+                            {
+                                key = temp;
+                            }
+                            //newSQL += key + " = " + dataGridView1.Rows[row].DataGridView.Columns[QS.pkMap[key]];
+                            newSQL += key + " = " + dataGridView1[QS.pkMap[key],row].Value.ToString();
+                        }
                     }
                 }
                 //items in grid are selected
@@ -334,6 +358,12 @@ namespace DBProject
                 {
 
                 }
+                Console.Out.WriteLine(newSQL + "           1111111111");
+                newSQL += ";";
+                sql = newSQL;
+                richTextBox1.Text = sql;
+                button1_Click(sender, e);
+
             }
         }
 
@@ -341,48 +371,14 @@ namespace DBProject
         private void setSelectedCells()
         {
             
-            Console.Out.WriteLine("Selection changed!!!!!!!!!!!!!!!!!!!!!!");
-           
-            //get current columns and pk's and tables
-            for (int counter = 0; counter < (dataGridView1.Columns.Count); counter++)
-            {
-                //Console.Out.WriteLine(dataGridView1.Columns[counter].Name.ToString() + " 1111111111111111111111");
-                string temp = dataGridView1.Columns[counter].Name.ToString();
-                QS.column.Add(temp);
-                if (DB_table.allPK.ContainsKey(temp))
-                {
-                    QS.pk.Add(temp);
-                    QS.table.Add(DB_table.allPK[temp]);
-                    Console.Out.WriteLine("pk = " + temp);
-                    Console.Out.WriteLine("teble = " + DB_table.allPK[temp]);
-                }
-            }
-
-            //check if its a star or not
-            foreach(string str in QS.table)
-            {
-                if (tables[str].attributes.Count == QS.column.Count)
-                {
-                    QS.star = true;
-                    foreach(string s in QS.column)
-                    {
-                        if (!tables[str].attributes.ContainsKey(s))
-                        {
-                            QS.star = false;
-                        }
-                    }
-                }
-            }
-            Console.Out.WriteLine(QS.star);
-
             //get selected rows
-            selected_row_index.Clear();
+            //selected_row_index.Clear();
             for (int counter = 0; counter < (dataGridView1.SelectedRows.Count); counter++)
             {
                 //Console.Out.WriteLine(dataGridView1.SelectedCells[counter].RowIndex.ToString() + " 1111111111111111111111");
-                string temp = dataGridView1.SelectedCells[counter].RowIndex.ToString();
-                Console.Out.WriteLine(temp + "           1111111111");
-                selected_row_index.Add(temp);
+                string temp = dataGridView1.SelectedRows[counter].Index.ToString();
+                //Console.Out.WriteLine(temp + "           1111111111");
+                //selected_row_index.Add(temp);
             }
 
 

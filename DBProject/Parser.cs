@@ -19,7 +19,8 @@ namespace DBProject
     class Parser
     {
         private HashSet<string> keywords = new HashSet<string>();
-        //public List<List<string>> colorMapping = new List<List<string>>();
+        public List<string> tables = new List<string>();
+        public List<string> words = new List<string>();
         public  Dictionary<string, string> colorMapping = new Dictionary<string, string>();
 
         public Parser()
@@ -27,6 +28,17 @@ namespace DBProject
             keywords.Add("select");
             keywords.Add("from");
             keywords.Add("where");
+            keywords.Add("insert");
+            keywords.Add("into");
+            keywords.Add("values");
+            keywords.Add("or");
+        }
+
+        public void clear()
+        {
+            //keywords.Clear();
+            tables.Clear();
+            colorMapping.Clear();
         }
 
         public void parse(string sql)
@@ -36,7 +48,7 @@ namespace DBProject
             
             foreach (char ch in sql)
             {
-                if (ch == ' ' || ch == '\n' || ch == ',' || ch == ';')
+                if ((ch == ' ' || ch == '\n' || ch == ',' || ch == ';' || ch == '(' || ch == ')'))
                 {
                     string add = "";
                     if (keywords.Contains(temp.ToLower()))
@@ -46,6 +58,7 @@ namespace DBProject
                     else if (DB_table.allTables.Contains(temp.ToLower()))
                     {
                         add = "table";
+                        tables.Add(temp);
                     }
                     else if (DB_table.allAttributes.Contains(temp.ToLower()))
                     {
@@ -55,8 +68,13 @@ namespace DBProject
                     {
                         add = "other";
                     }
-
-                    colorMapping.Add(temp, add);
+                    //Console.Out.WriteLine(temp + "    " + add);
+                    if (temp.Length > 0 && !colorMapping.Keys.Contains(temp))
+                    {
+                        colorMapping.Add(temp, add);
+                    }
+                    words.Add(temp);
+                    words.Add(ch.ToString());
                     temp = "";
                 }
                 else
