@@ -450,13 +450,8 @@ namespace DBProject
                             // get pk of selected rows
                             if (table_choices.Count == 1)
                             {
-                                
-                               
                                 Console.Out.WriteLine("Table choices = " + table_choices[0]);
                                 pkString = DBtables[table_choices[0]].primary_keys[0];
-                                //string arg = "/C " + path + "sqlite3 " + path + database + " \"Select " + pkString + " from " +  table_choices[0] + " \" > " + path + "out.txt";
-                                //Console.Out.WriteLine(arg);
-                               // run_command(arg);
                                 bool needOR = false;
                                 string extraSQL = "SELECT " + pkString + " FROM " + table_choices[0] + " WHERE ";
                                 string where = "";
@@ -464,33 +459,52 @@ namespace DBProject
                                 {
                                     if (needOR)
                                     {
-                                        newSQL += " or ";
+                                        where += " or ";
                                     }
-                                    newSQL += "(";
+                                    where += "(";
                                     notfirst = false;
                                     foreach (int col in selectedCells[row])
                                     {
                                         if (notfirst)
                                         {
-                                            newSQL += " and ";
+                                            where += " and ";
                                         }
                                         //newSQL += pkString + " = " + DBtables[table_choices[0]].attributes[pkString][0] + " ";
-                                        newSQL += dataGridView1.Columns[col].Name.ToLower() + " = ";
+                                        where += dataGridView1.Columns[col].Name.ToLower() + " = ";
                                         Console.Out.WriteLine(DBtables[table_choices[0]].attributes[dataGridView1.Columns[col].Name.ToLower()][1]);
                                         if (DBtables[table_choices[0]].attributes[dataGridView1.Columns[col].Name.ToLower()][1] == "text")
                                         {
-                                            newSQL += "\"" + dataGridView1[col, row].Value.ToString() + "\"";
+                                            where += "\"" + dataGridView1[col, row].Value.ToString() + "\"";
                                         }
                                         else
                                         {
-                                            newSQL += dataGridView1[col, row].Value.ToString();
+                                            where += dataGridView1[col, row].Value.ToString();
                                         }
                                         notfirst = true;
                                     }
-                                    newSQL += ")";
+                                    where += ")";
                                     needOR = true;
                                 }
-
+                                //newSQL += where;
+                                extraSQL += where.Replace("\"","\\\"") + ";";
+                                string arg = "/C " + path + "sqlite3 " + path + database + " \"" + extraSQL + "\" > " + path + "out.txt";
+                                //Console.Out.WriteLine(arg);
+                                run_command(arg);
+                                string finalSQL = newSQL + pkString + " = ";
+                                
+                                notfirst = false;
+                                foreach (string str in getResult())
+                                {
+                                    if (notfirst)
+                                    {
+                                        finalSQL += " or ";
+                                    }
+                                    notfirst = true;
+                                    finalSQL += str;
+                                }
+                                Console.Out.WriteLine(finalSQL);
+                                newSQL += where;
+                                newSQL = finalSQL;
                             }
                         }
 
