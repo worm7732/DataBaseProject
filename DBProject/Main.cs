@@ -25,6 +25,7 @@ namespace DBProject
         //List<String> current_columns = new List<String>();
         Dictionary<int, HashSet<int>> selectedCells = new Dictionary<int, HashSet<int>>();
         //HashSet<int> selected = new HashSet<int>();
+        int totalsize = 0;
         
         private void reset_in_out()
         {
@@ -36,6 +37,7 @@ namespace DBProject
         private void find_DB_files()
         {
             string arg = "/C " + path + "getDB.bat";
+            Console.Out.WriteLine(arg);
             run_command(arg);
             database_names = getResult();
             
@@ -44,6 +46,7 @@ namespace DBProject
         private void load_DB()
         {
             string arg = "/C " + path + "sqlite3 " + path + database + " .tables > " + path + "out.txt";
+            //Console.Out.WriteLine(arg);
             run_command(arg);
             foreach(string strings in getResult()){
                 string[] tables = strings.Split(' ');
@@ -149,6 +152,15 @@ namespace DBProject
             }
         }
 
+        //private void dataGridView1_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        //{
+        //    Console.Out.WriteLine("selection changed");
+        //    if (dataGridView1.RowCount > totalsize)
+        //    {
+        //        dataGridView1.AllowUserToAddRows = false;
+        //    }
+        //}
+
         private void fill_dataGrid(List<String> result)
         {
             QS.clear();
@@ -161,6 +173,9 @@ namespace DBProject
             if (result.Count > 0)
             {
                 char[] delim = { '|' };
+                dataGridView1.AllowUserToAddRows = true;
+                totalsize = result.Count;
+                Console.Out.WriteLine("selection changed      " + totalsize);
                 for (int i = 0; i < result.Count; i++)
                 {
                     string[] elements = result.ElementAt(i).Split(delim);
@@ -479,6 +494,83 @@ namespace DBProject
             richTextBox1.Text = sql;
             button1_Click(sender, e);
         }
+
+        private bool insertEntry(object sender, EventArgs e)
+        {
+            //determine table
+            string currentTable = "";
+            string newSQL = "";
+            if (queryParser.tables.Count == 1)
+            {
+                currentTable = queryParser.tables[0];
+            }
+            else
+            {
+                MessageBox.Show("Can't insert becuase multiple tables are being accessed.");
+            }
+            //build attr list
+            if (DBtables[currentTable].attributes.Count == selectedCells.ElementAt(0).Value.Count)
+            {
+                //bool valid = true;
+                newSQL = "INSERT INTO " + currentTable + " (";
+                bool notfirst = false;
+                for (int i = 0; i < dataGridView1.ColumnCount; i++)
+                {
+                    //Console.Out.WriteLine(dataGridView1.Columns[i].Name);
+                    if(notfirst)
+                    {
+                        newSQL += ",";
+                    }
+                    newSQL += dataGridView1.Columns[i].Name;
+                    notfirst = true;
+                }
+                newSQL += ")\nVALUES (";
+                notfirst = false;
+                Console.Out.WriteLine(newSQL);
+                for (int i = 0; i < dataGridView1.ColumnCount; i++)
+                {
+                    if (notfirst)
+                    {
+                        newSQL += ",";
+                    }
+                    //string temp = dataGridView1[i, dataGridView1.RowCount - 1].Value.ToString();
+                    if (dataGridView1[i, dataGridView1.RowCount - 1].Value != null)
+                    {
+                        string type = DBtables[currentTable].attributes[dataGridView1.Columns[i].Name.ToLower()][1];
+                        Console.Out.WriteLine(type + "      sadfkhjsaedfuih sadfhs dfisdh ");
+                        if (type != "int")
+                        {
+                            newSQL += "\'" + dataGridView1[i, dataGridView1.RowCount - 1].Value.ToString() +"\'";
+                        }
+                        else
+                        {
+                            newSQL += dataGridView1[i, dataGridView1.RowCount - 1].Value.ToString();
+                        }
+                        //newSQL += dataGridView1[i, dataGridView1.RowCount - 1].Value.ToString();
+                        notfirst = true;
+                    }
+                    else
+                    {
+                        
+                        Console.Out.WriteLine("notthing there");
+                        MessageBox.Show("Can't insert becuase of null value.");
+                        return false;
+                    }
+                    
+                }
+                newSQL += ");";
+                Console.Out.WriteLine(newSQL);
+                sql = newSQL;
+                richTextBox1.Text = sql;
+                button1_Click(sender, e);
+            }
+            else
+            {
+                MessageBox.Show("Can't insert becuase not all attributes are present.");
+                return false;
+            }
+            return true;
+        }
         //reverse engineer
         private void button2_Click(object sender, EventArgs e)
         {
@@ -508,6 +600,7 @@ namespace DBProject
                 {
                     //MessageBox.Show("Invalid Insert. Last row can only be chosen by itself.");
                     Console.Out.WriteLine("insertion!!!!");
+                    insertEntry(sender, e);
                 }
                 
             }
@@ -516,6 +609,10 @@ namespace DBProject
 
         private void setSelectedCells()
         {
+            if (dataGridView1.RowCount > totalsize)
+            {
+                dataGridView1.AllowUserToAddRows = false;
+            }
             selectedCells.Clear();
             for (int row = 0; row < dataGridView1.RowCount; row++)
             {

@@ -5,3 +5,4 @@ ID|NAME|AGE|ADDRESS|SALARY
 4|Jordan|7|Ne York|2000.0
 5|Max|27|Florida|8000.0
 6|Lynn|18|California|211000.0
+7|Jarod|33|Columbus|700.0
