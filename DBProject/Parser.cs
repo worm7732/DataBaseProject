@@ -20,7 +20,7 @@ namespace DBProject
     {
         private HashSet<string> keywords = new HashSet<string>();
         public List<string> tables = new List<string>();
-        public List<string> words = new List<string>();
+       // public List<string> words = new List<string>();
         public  Dictionary<string, string> colorMapping = new Dictionary<string, string>();
 
         public Parser()
@@ -73,8 +73,6 @@ namespace DBProject
                     {
                         colorMapping.Add(temp, add);
                     }
-                    words.Add(temp);
-                    words.Add(ch.ToString());
                     temp = "";
                 }
                 else

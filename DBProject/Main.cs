@@ -209,37 +209,41 @@ namespace DBProject
             sql = richTextBox1.Text;
             queryParser.clear();
             queryParser.parse(sql);
-            foreach(string word in queryParser.colorMapping.Keys)
+            foreach (string word in queryParser.colorMapping.Keys)
             {
-                
-                int myPosition = richTextBox1.Find(word);
-                if (myPosition >= 0)
+
+                int myPosition = 0;
+                while (((myPosition = richTextBox1.Find(word, myPosition, RichTextBoxFinds.None)) != -1))
                 {
-                    richTextBox1.SelectionStart = myPosition;
-                    richTextBox1.SelectionLength = word.Length;
-                    string check = queryParser.colorMapping[word];
-                    Console.Out.WriteLine(word + " " + check);
-                    if (check == "keyword")
+                    if (myPosition >= 0)
                     {
-                        richTextBox1.SelectionColor = Color.Red;
+                        richTextBox1.SelectionStart = myPosition;
+                        richTextBox1.SelectionLength = word.Length;
+                        string check = queryParser.colorMapping[word];
+                        //Console.Out.WriteLine(word + " " + check);
+                        if (check == "keyword")
+                        {
+                            richTextBox1.SelectionColor = Color.Red;
+                        }
+                        else if (check == "table")
+                        {
+                            richTextBox1.SelectionColor = Color.Blue;
+                        }
+                        else if (check == "attribute")
+                        {
+                            richTextBox1.SelectionColor = Color.Green;
+                        }
+                        else if (check == "other")
+                        {
+                            richTextBox1.SelectionColor = Color.Black;
+                        }
                     }
-                    else if (check == "table")
-                    {
-                        richTextBox1.SelectionColor = Color.Blue;
-                    }
-                    else if (check == "attribute")
-                    {
-                        richTextBox1.SelectionColor = Color.Green;
-                    }
-                    else if (check == "other")
-                    {
-                        richTextBox1.SelectionColor = Color.Black;
-                    }
+                    myPosition += word.Length;
+                    Console.Out.WriteLine(myPosition + " " + sql.Length);
+                    richTextBox1.SelectionStart = sql.Length;
+                    richTextBox1.SelectionLength = 0;
+                    richTextBox1.SelectionColor = Color.Black;
                 }
-                
-                richTextBox1.SelectionStart = sql.Length;
-                richTextBox1.SelectionLength = 0;
-                richTextBox1.SelectionColor = Color.Black;
             }
             
         }
