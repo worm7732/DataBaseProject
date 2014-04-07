@@ -16,17 +16,26 @@ namespace DBProject
 {
     public partial class Main : Form
     {
-        String sql, database, path;
+        String sql, sql2, database, path;
         List<String> database_names;// = new List<String>(); // names of databases
         Parser queryParser = new Parser(); // parser
+        Parser queryParser2 = new Parser(); // parser
         Dictionary<string, DB_table> DBtables = new Dictionary<string, DB_table>(); // hashtable for DBtables
         QueryState QS = new QueryState();
+        QueryState QS2 = new QueryState();
         List<String> possibleQueries= new List<String>();
+        List<String> possibleQueries2 = new List<String>();
         //List<String> current_columns = new List<String>();
         Dictionary<int, HashSet<int>> selectedCells = new Dictionary<int, HashSet<int>>();
+        Dictionary<int, HashSet<int>> selectedCells2 = new Dictionary<int, HashSet<int>>();
         //HashSet<int> selected = new HashSet<int>();
+
         int totalsize = 0;
-        
+        string currentTable = "";
+        string pkString = "";
+        int pkInt = 0;
+        string pkQUERY = "";
+
         private void reset_in_out()
         {
             string[] reset_file = { };
@@ -37,7 +46,7 @@ namespace DBProject
         private void find_DB_files()
         {
             string arg = "/C " + path + "getDB.bat";
-            Console.Out.WriteLine(arg);
+            //Console.Out.WriteLine(arg);
             run_command(arg);
             database_names = getResult();
             
@@ -108,6 +117,7 @@ namespace DBProject
             load_DB();
             //set sql command to null
             sql = "";
+            sql2 = "";
             
 
         }
@@ -131,51 +141,61 @@ namespace DBProject
             process.WaitForExit();
         }
 
-        //execute query
-        private void button1_Click(object sender, EventArgs e)
+        public void run_query(string SQLquery, System.Windows.Forms.DataGridView grid_view, QueryState qs, Parser qParser)
         {
-            if (sql.Length > 0)
+            if (SQLquery.Length > 0)
             {
                 //create file to send to sqlite
-                string[] write_to_in = { ".header on", sql};
+                string[] write_to_in = { ".header on", SQLquery };
                 System.IO.File.WriteAllLines(@path + "in.txt", write_to_in);
                 //send command and run
                 string arg = "/C " + path + "sqlite3 " + path + database + " < " + path + "in.txt > " + path + "out.txt";
                 run_command(arg);
                 //populate result table
-                fill_dataGrid(getResult());
-                
+                fill_dataGrid(getResult(), grid_view, qs, qParser);
+
             }
             else
             {
-                Console.Out.WriteLine("\'" + sql + "\' is not a valid sql command");
+                Console.Out.WriteLine("\'" + SQLquery + "\' is not a valid sql command");
             }
         }
 
-        //private void dataGridView1_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        //{
-        //    Console.Out.WriteLine("selection changed");
-        //    if (dataGridView1.RowCount > totalsize)
-        //    {
-        //        dataGridView1.AllowUserToAddRows = false;
-        //    }
-        //}
-
-        private void fill_dataGrid(List<String> result)
+        //execute query
+        private void button1_Click(object sender, EventArgs e)
         {
-            QS.clear();
-            if(queryParser.colorMapping.ContainsKey("*"))
+           
+            sql = richTextBox1.Text;
+            if (sql.Length > 0)
+            {
+                //Console.Out.WriteLine("running left side");
+                run_query(sql, dataGridView1, QS, queryParser);
+            }
+            sql2 = richTextBox2.Text;
+           // Console.Out.WriteLine(sql2.Length + " " + sql2.Length);
+            if (sql2.Length > 0)
+            {
+                //Console.Out.WriteLine("running right side");
+                run_query(sql2, dataGridView2, QS2, queryParser2);
+            }
+            
+        }
+
+        private void fill_dataGrid(List<String> result, System.Windows.Forms.DataGridView grid_view, QueryState qs, Parser qParser)
+        {
+            qs.clear();
+            if(qParser.colorMapping.ContainsKey("*"))
             {
                 //Console.Out.WriteLine(  "*           1111111111");
-                QS.star = true;
+                qs.star = true;
             }
 
             if (result.Count > 0)
             {
                 char[] delim = { '|' };
-                dataGridView1.AllowUserToAddRows = true;
+                grid_view.AllowUserToAddRows = true;
                 totalsize = result.Count;
-                Console.Out.WriteLine("selection changed      " + totalsize);
+               // Console.Out.WriteLine("selection changed      " + totalsize);
                 for (int i = 0; i < result.Count; i++)
                 {
                     string[] elements = result.ElementAt(i).Split(delim);
@@ -183,27 +203,27 @@ namespace DBProject
                     if (i == 0)
                     {
                         //setup grid
-                        dataGridView1.Rows.Clear();
-                        dataGridView1.ColumnCount = elements.Length;
-                        dataGridView1.Visible = true;
-                        dataGridView1.ColumnHeadersVisible = true;
+                        grid_view.Rows.Clear();
+                        grid_view.ColumnCount = elements.Length;
+                        grid_view.Visible = true;
+                        grid_view.ColumnHeadersVisible = true;
                         DataGridViewCellStyle columnHeaderStyle = new DataGridViewCellStyle();
                         columnHeaderStyle.BackColor = Color.Beige;
                         columnHeaderStyle.Font = new Font("Verdana", 10, FontStyle.Bold);
-                        dataGridView1.ColumnHeadersDefaultCellStyle = columnHeaderStyle;
+                        grid_view.ColumnHeadersDefaultCellStyle = columnHeaderStyle;
                         for (int j = 0; j < elements.Length; j++)
                         {
                             string str = elements[j];
-                            dataGridView1.Columns[j].Name = str;
+                            grid_view.Columns[j].Name = str;
                             
                             if (DB_table.allPK.ContainsKey(str.ToLower()))
                             {
-                                QS.pkMap.Add(str, j);
+                                qs.pkMap.Add(str, j);
                                 //Console.Out.WriteLine(str + "           1111111111");
                             }
-                            if (QS.attMap.ContainsKey(str))
+                            if (qs.attMap.ContainsKey(str))
                             {
-                                QS.attMap.Add(str, j);
+                                qs.attMap.Add(str, j);
                                 //Console.Out.WriteLine(str + "           1111111111");
                             }
                             
@@ -211,66 +231,67 @@ namespace DBProject
                     }
                     else
                     {
-                        dataGridView1.Rows.Add(elements);
+                        grid_view.Rows.Add(elements);
                     }
                     //Console.Out.WriteLine(result.ElementAt(i) + "!!!!!!!!!!!!!!!!!!!!!!!!!");
                 }
             }
             else
             {
-                dataGridView1.Rows.Clear();
-                dataGridView1.Visible = false;
+                grid_view.Rows.Clear();
+                grid_view.Visible = false;
                 MessageBox.Show("This query returned no results");
             }
         }
 
-        private void richTextBox1_TextChanged(object sender, EventArgs e)
+        private string changedText(object sender, EventArgs e, System.Windows.Forms.RichTextBox rtb, Parser qParser)
         {
-            int save = richTextBox1.SelectionStart;
-            sql = richTextBox1.Text;
-            queryParser.clear();
-            queryParser.parse(sql);
-            foreach (string word in queryParser.colorMapping.Keys)
+            string SQL = "";
+            int save = rtb.SelectionStart;
+            SQL = rtb.Text;
+            qParser.clear();
+            qParser.parse(SQL);
+            foreach (string word in qParser.colorMapping.Keys)
             {
 
                 int myPosition = 0;
-                while (((myPosition = richTextBox1.Find(word, myPosition, RichTextBoxFinds.None)) != -1))
+                while (((myPosition = rtb.Find(word, myPosition, RichTextBoxFinds.None)) != -1))
                 {
                     if (myPosition >= 0)
                     {
-                        richTextBox1.SelectionStart = myPosition;
-                        richTextBox1.SelectionLength = word.Length;
-                        string check = queryParser.colorMapping[word];
+                        rtb.SelectionStart = myPosition;
+                        rtb.SelectionLength = word.Length;
+                        string check = qParser.colorMapping[word];
                         //Console.Out.WriteLine(word + " " + check);
                         if (check == "keyword")
                         {
-                            richTextBox1.SelectionColor = Color.Red;
+                            rtb.SelectionColor = Color.Red;
                         }
                         else if (check == "table")
                         {
-                            richTextBox1.SelectionColor = Color.Blue;
+                            rtb.SelectionColor = Color.Blue;
                         }
                         else if (check == "attribute")
                         {
-                            richTextBox1.SelectionColor = Color.Green;
+                            rtb.SelectionColor = Color.Green;
                         }
                         else if (check == "other")
                         {
-                            richTextBox1.SelectionColor = Color.Black;
+                            rtb.SelectionColor = Color.Black;
                         }
                     }
                     myPosition += word.Length;
-                    if (myPosition == sql.Length)
+                    if (myPosition == SQL.Length)
                     {
                         break;
                     }
-                    //Console.Out.WriteLine(myPosition + " " + sql.Length);
-                    richTextBox1.SelectionStart = save;
-                    richTextBox1.SelectionLength = 0;
-                    richTextBox1.SelectionColor = Color.Black;
+                    //Console.Out.WriteLine(myPosition + " " + SQL.Length);
+                    rtb.SelectionStart = save;
+                    rtb.SelectionLength = 0;
+                    rtb.SelectionColor = Color.Black;
                 }
             }
-            
+            return SQL;
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
@@ -341,58 +362,72 @@ namespace DBProject
             }
         }
 
-        private void primaryKeyOptions()
+        private string sqlStart(Parser qParser, Dictionary<int, HashSet<int>> sCells, System.Windows.Forms.DataGridView grid_view)
         {
             string newSQL = "SELECT ";
             bool notfirst = false;
-            string currentTable = "";
-            int pkInt = -1;
-            string pkString = "";
             string tablePART = "";
+            currentTable = "";
             //determine table
-            if (queryParser.tables.Count == 1)
+            Console.Out.WriteLine(qParser.tables.Count);
+            if (qParser.tables.Count == 1)
             {
-                currentTable = queryParser.tables[0];
+                currentTable = qParser.tables[0];
             }
             //build attr list
-            if (DBtables[currentTable].attributes.Count == selectedCells.ElementAt(0).Value.Count)
+            Console.Out.WriteLine(currentTable + "       look here!");
+            //Console.Out.WriteLine(DBtables[currentTable].attributes.Count + "       look here" );
+            if (DBtables[currentTable].attributes.Count == sCells.ElementAt(0).Value.Count)
             {
                 tablePART = " * ";
             }
             else
             {
-                foreach (int i in selectedCells.ElementAt(0).Value)
+                foreach (int i in sCells.ElementAt(0).Value)
                 {
                     //Console.Out.WriteLine(dataGridView1.Columns[i].Name);
                     if (notfirst)
                     {
                         tablePART += ", ";
                     }
-                    tablePART += dataGridView1.Columns[i].Name + " ";
+                    tablePART += grid_view.Columns[i].Name + " ";
                     notfirst = true;
-                    if (DB_table.allPK.ContainsKey(dataGridView1.Columns[i].Name.ToLower()))
+                    //Console.Out.WriteLine(grid_view.Columns[i].Name + "      !!!!!!!!!!!");
+                    if (DB_table.allPK.ContainsKey(grid_view.Columns[i].Name.ToLower()))
                     {
-                        pkString = dataGridView1.Columns[i].Name.ToLower();
+                        pkString = grid_view.Columns[i].Name.ToLower();
                         pkInt = i;
                     }
                 }
             }
             newSQL += tablePART + " FROM " + currentTable + " WHERE ";
+            return newSQL;
+        }
 
+        private void primaryKeyOptions(Parser qParser, Dictionary<int, HashSet<int>> sCells,
+            System.Windows.Forms.DataGridView grid_view, List<String> possibleQ)
+        {
+            pkString = "";
+            currentTable = "";
+            pkInt = -1;
+            string newSQL = sqlStart(qParser,sCells,grid_view);
+            bool notfirst = false;
+            
             //pk is in relation
             if (pkInt > -1)
             {
                 notfirst = false;
-                foreach (int row in selectedCells.Keys)
+                foreach (int row in sCells.Keys)
                 {
                     if (notfirst)
                     {
                         newSQL += " or ";
                     }
-                    newSQL += pkString + " = " + dataGridView1[pkInt, row].Value.ToString() + " ";
+                    newSQL += pkString + " = " + grid_view[pkInt, row].Value.ToString() + " ";
                     notfirst = true;
                 }
-                possibleQueries.Add(newSQL + ";");
+                possibleQ.Add(newSQL + ";");
+                pkQUERY = newSQL + ";";
             }
             //need to find pk value
             else
@@ -402,9 +437,9 @@ namespace DBProject
                 foreach (DB_table table in DBtables.Values)
                 {
                     bool choice = true;
-                    foreach (int col in selectedCells.ElementAt(0).Value)
+                    foreach (int col in sCells.ElementAt(0).Value)
                     {
-                        if (!table.attributes.ContainsKey(dataGridView1.Columns[col].Name.ToLower()))
+                        if (!table.attributes.ContainsKey(grid_view.Columns[col].Name.ToLower()))
                         {
                             choice = false;
                         }
@@ -422,7 +457,7 @@ namespace DBProject
                     bool needOR = false;
                     //where clause
                     string where = "";
-                    foreach (int row in selectedCells.Keys)
+                    foreach (int row in sCells.Keys)
                     {
                         if (needOR)
                         {
@@ -430,31 +465,28 @@ namespace DBProject
                         }
                         where += "(";
                         notfirst = false;
-                        foreach (int col in selectedCells[row])
+                        foreach (int col in sCells[row])
                         {
                             if (notfirst)
                             {
                                 where += " and ";
                             }
-                            //newSQL += pkString + " = " + DBtables[table_choices[0]].attributes[pkString][0] + " ";
-                            where += dataGridView1.Columns[col].Name.ToLower() + " = ";
-                            //Console.Out.WriteLine(DBtables[table_choices[0]].attributes[dataGridView1.Columns[col].Name.ToLower()][1]);
-                            string type = DBtables[table_choices[0]].attributes[dataGridView1.Columns[col].Name.ToLower()][1];
+                            where += grid_view.Columns[col].Name.ToLower() + " = ";
+                            string type = DBtables[table_choices[0]].attributes[grid_view.Columns[col].Name.ToLower()][1];
                             //Console.Out.WriteLine(type);
                             if (type != "int")// || type = )
                             {
-                                where += "\"" + dataGridView1[col, row].Value.ToString() + "\"";
+                                where += "\"" + grid_view[col, row].Value.ToString() + "\"";
                             }
                             else
                             {
-                                where += dataGridView1[col, row].Value.ToString();
+                                where += grid_view[col, row].Value.ToString();
                             }
                             notfirst = true;
                         }
                         where += ")";
                         needOR = true;
                     }
-                    //newSQL += where;
 
                     string extraSQL = "SELECT " + pkString + " FROM " + table_choices[0] + " WHERE ";
                     extraSQL += where.Replace("\"", "\\\"") + ";";
@@ -475,78 +507,85 @@ namespace DBProject
                     }
                     // Console.Out.WriteLine(finalSQL);
                     newSQL += where + ";";
-                    possibleQueries.Add(newSQL);
+                    possibleQ.Add(newSQL);
                     newSQL = finalSQL + ";";
-                    possibleQueries.Add(newSQL);
+                    possibleQ.Add(newSQL);
+                    pkQUERY = finalSQL; 
                 }
             }
         }
 
-        private void pickQuery(object sender, EventArgs e)
+        private void pickQuery(List<String> possibleQ, System.Windows.Forms.RichTextBox rtb, System.Windows.Forms.DataGridView grid_view, Parser qParser, QueryState qs)
         {
-            Console.Out.WriteLine(possibleQueries.Count + " = number of  possible!!");
-            foreach (string str in possibleQueries)
+            Console.Out.WriteLine(possibleQ.Count + " = number of  possible!!");
+            foreach (string str in possibleQ)
             {
                 Console.Out.WriteLine(str + "           possible!!");
             }
-            sql = possibleQueries[possibleQueries.Count - 1];
-            Console.Out.WriteLine(sql + "           chosen!!");
-            richTextBox1.Text = sql;
-            button1_Click(sender, e);
+            string SQL = possibleQ[possibleQ.Count - 1];
+            Console.Out.WriteLine(SQL + "           chosen!!");
+            rtb.Text = SQL;
+            //button1_Click(sender, e);
+            if (SQL.Length > 0)
+            {
+                //Console.Out.WriteLine("running left side");
+                run_query(SQL, grid_view, qs, qParser);
+            }
         }
 
-        private bool insertEntry(object sender, EventArgs e)
+        private bool insertEntry( Parser qParser, Dictionary<int, HashSet<int>> sCells,
+            System.Windows.Forms.DataGridView grid_view, System.Windows.Forms.RichTextBox rtb, QueryState qs)
         {
             //determine table
             string currentTable = "";
             string newSQL = "";
-            if (queryParser.tables.Count == 1)
+            if (qParser.tables.Count == 1)
             {
-                currentTable = queryParser.tables[0];
+                currentTable = qParser.tables[0];
             }
             else
             {
                 MessageBox.Show("Can't insert becuase multiple tables are being accessed.");
             }
             //build attr list
-            if (DBtables[currentTable].attributes.Count == selectedCells.ElementAt(0).Value.Count)
+            if (DBtables[currentTable].attributes.Count == sCells.ElementAt(0).Value.Count)
             {
                 //bool valid = true;
                 newSQL = "INSERT INTO " + currentTable + " (";
                 bool notfirst = false;
-                for (int i = 0; i < dataGridView1.ColumnCount; i++)
+                for (int i = 0; i < grid_view.ColumnCount; i++)
                 {
-                    //Console.Out.WriteLine(dataGridView1.Columns[i].Name);
+                    //Console.Out.WriteLine(grid_view.Columns[i].Name);
                     if(notfirst)
                     {
                         newSQL += ",";
                     }
-                    newSQL += dataGridView1.Columns[i].Name;
+                    newSQL += grid_view.Columns[i].Name;
                     notfirst = true;
                 }
                 newSQL += ")\nVALUES (";
                 notfirst = false;
                 Console.Out.WriteLine(newSQL);
-                for (int i = 0; i < dataGridView1.ColumnCount; i++)
+                for (int i = 0; i < grid_view.ColumnCount; i++)
                 {
                     if (notfirst)
                     {
                         newSQL += ",";
                     }
-                    //string temp = dataGridView1[i, dataGridView1.RowCount - 1].Value.ToString();
-                    if (dataGridView1[i, dataGridView1.RowCount - 1].Value != null)
+                    //string temp = grid_view[i, grid_view.RowCount - 1].Value.ToString();
+                    if (grid_view[i, grid_view.RowCount - 1].Value != null)
                     {
-                        string type = DBtables[currentTable].attributes[dataGridView1.Columns[i].Name.ToLower()][1];
+                        string type = DBtables[currentTable].attributes[grid_view.Columns[i].Name.ToLower()][1];
                         Console.Out.WriteLine(type + "      sadfkhjsaedfuih sadfhs dfisdh ");
                         if (type != "int")
                         {
-                            newSQL += "\'" + dataGridView1[i, dataGridView1.RowCount - 1].Value.ToString() +"\'";
+                            newSQL += "\'" + grid_view[i, grid_view.RowCount - 1].Value.ToString() +"\'";
                         }
                         else
                         {
-                            newSQL += dataGridView1[i, dataGridView1.RowCount - 1].Value.ToString();
+                            newSQL += grid_view[i, grid_view.RowCount - 1].Value.ToString();
                         }
-                        //newSQL += dataGridView1[i, dataGridView1.RowCount - 1].Value.ToString();
+                        //newSQL += grid_view[i, grid_view.RowCount - 1].Value.ToString();
                         notfirst = true;
                     }
                     else
@@ -560,9 +599,14 @@ namespace DBProject
                 }
                 newSQL += ");";
                 Console.Out.WriteLine(newSQL);
-                sql = newSQL;
-                richTextBox1.Text = sql;
-                button1_Click(sender, e);
+                //sql = newSQL;
+                rtb.Text = newSQL;
+                //button1_Click(sender, e);
+                if (newSQL.Length > 0)
+                {
+                    Console.Out.WriteLine("running left side");
+                    run_query(newSQL, grid_view, qs, qParser);
+                }
             }
             else
             {
@@ -571,58 +615,163 @@ namespace DBProject
             }
             return true;
         }
-        //reverse engineer
-        private void button2_Click(object sender, EventArgs e)
+
+        private void BETWEEN_entry(Parser qParser, Dictionary<int, HashSet<int>> sCells,
+            System.Windows.Forms.DataGridView grid_view, List<String> possibleQ)
         {
-            possibleQueries.Clear();
-            if (dataGridView1.Visible == false)
-            {
-                MessageBox.Show("Nothing is selected.");
+            pkString = "";
+            currentTable = "";
+            pkInt = -1;
+            string newSQL = sqlStart(qParser, sCells, grid_view);
+            Console.Out.WriteLine(newSQL + "      between");
+            Console.Out.WriteLine(pkQUERY + "      PK");
+            Console.Out.WriteLine(currentTable + "    tab;e");
+            string add = "";
+            bool notfirst = false;
+            string end = pkQUERY.Substring(pkQUERY.IndexOf("WHERE") + 5);
+            Dictionary<string, List<string>> arithmatic = new Dictionary<string, List<string>>();
+            //Console.Out.WriteLine(run);
+            string arg = "/C " + path + "sqlite3 " + path + database + " \"" + pkQUERY + "\" > " + path + "out.txt";
+            run_command(arg);
+            List<string> answer = getResult();
+            int total = answer.Count;
+            string run = "", min = "", max = "";
+            foreach(string[] str in DBtables[currentTable].attributes.Values){
+                if (str[1] == "int" || str[1] == "real")
+                {
+                    List<string> maxMIN = new List<string>();
+                    if (notfirst)
+                    {
+                        add += " , ";
+                    }
+                    notfirst = true;
+                    add += str[0];
+                     run = "SELECT min(" + str[0] + ") FROM " + currentTable + " WHERE " + end;
+                    //Console.Out.WriteLine(run);
+                     arg = "/C " + path + "sqlite3 " + path + database + " \"" + run + "\" > " + path + "out.txt";
+                    run_command(arg);
+                    min = getResult()[0];
+                    run = "SELECT max(" + str[0] + ") FROM " + currentTable + " WHERE " + end;
+                    //Console.Out.WriteLine(run);
+                    arg = "/C " + path + "sqlite3 " + path + database + " \"" + run + "\" > " + path + "out.txt";
+                    run_command(arg);
+                    max = getResult()[0];
+                    //Console.Out.WriteLine(min + " = min   " + max + "   = max");
+                    maxMIN.Add(min);
+                    maxMIN.Add(max);
+                    //string finalSQL = newSQL;
+                    arithmatic.Add(str[0], maxMIN);
+
+                }
             }
-            else
+            string attempt = "SELECT " + add + " FROM " + currentTable + " WHERE ";
+            
+            foreach (string str in arithmatic.Keys)
             {
-                setSelectedCells();
-                if (checkCells() == "Valid Selection")
-                {
-                    Console.Out.WriteLine("valid selection!!!!");
-                    primaryKeyOptions();
-                    pickQuery(sender, e);
-                }
-                else if (checkCells() == "Invalid Selection")
-                {
-                    MessageBox.Show("Invalid selection: Please try again.");
-                }
-                else if (checkCells() == "Invalid Insert")
-                {
-                    MessageBox.Show("Invalid Insert. Last row can only be chosen by itself.");
-                }
-                else if (checkCells() == "Valid Insert")
-                {
-                    //MessageBox.Show("Invalid Insert. Last row can only be chosen by itself.");
-                    Console.Out.WriteLine("insertion!!!!");
-                    insertEntry(sender, e);
-                }
-                
+                //fin = attempt + str + " > " + arithmatic[str][0];
+                checkTotal(attempt + str + " > " + arithmatic[str][0] + ";", total, answer);
+                checkTotal(attempt + str + " != " + arithmatic[str][0] + ";", total, answer);
+                checkTotal(attempt + str + " != " + arithmatic[str][1] + ";", total, answer);
+                //checkTotal(attempt + str + " >= " + arithmatic[str][0] + ";", total, answer);
+                checkTotal(attempt + str + " = " + arithmatic[str][0] + ";", total, answer);
+                checkTotal(attempt + str + " = " + arithmatic[str][1] + ";", total, answer);
+                checkTotal(attempt + str + " < " + arithmatic[str][1] + ";", total, answer);
+                checkTotal(attempt + str + " BETWEEN " + arithmatic[str][0] + " and " + arithmatic[str][1] + ";", total, answer);
+                checkTotal(attempt + str + " = (SELECT MAX(" + str + ") FROM " + currentTable + ");", total, answer);
+                checkTotal(attempt + str + " = (SELECT MIN(" + str + ") FROM " + currentTable + ");", total, answer);
+                checkTotal(attempt + str + " > (SELECT AVG(" + str + ") FROM " + currentTable + ");", total, answer);
+                checkTotal(attempt + str + " < (SELECT AVG(" + str + ") FROM " + currentTable + ");", total, answer);
+                checkTotal(attempt + str + " >= (SELECT AVG(" + str + ") FROM " + currentTable + ");", total, answer);
+                checkTotal(attempt + str + " <= (SELECT AVG(" + str + ") FROM " + currentTable + ");", total, answer);
+                Console.Out.WriteLine(attempt + str + " <= (SELECT AVG(" + str + ") FROM " + currentTable + ");");
             }
         }
 
-
-        private void setSelectedCells()
+        private void checkTotal(string check, int total, List<string> answer)
         {
-            if (dataGridView1.RowCount > totalsize)
+            string arg = "/C " + path + "sqlite3 " + path + database + " \"" + check + "\" > " + path + "out.txt";
+            run_command(arg);
+            List<string> myAnswer= getResult();
+            if (myAnswer.Count == total)
             {
-                dataGridView1.AllowUserToAddRows = false;
+                bool correct = true;
+                foreach(string str in myAnswer){
+                    if(!answer.Contains(str)){
+                        correct = false;
+                    }
+                }
+                if (correct)
+                {
+                    Console.Out.WriteLine(check + "produced " + myAnswer.Count + " results!  " + total);
+                }
             }
-            selectedCells.Clear();
-            for (int row = 0; row < dataGridView1.RowCount; row++)
+        }
+
+        private void reversePortion(List<String> possibleQ, System.Windows.Forms.DataGridView grid_view, Dictionary<int,
+            HashSet<int>> sCells, Parser qParser, System.Windows.Forms.RichTextBox rtb,QueryState qs)
+        {
+            possibleQ.Clear();
+            setSelectedCells(grid_view, sCells);
+            if (sCells.Count < 1)
+            {
+                //MessageBox.Show("Nothing is selected.");
+                
+            }
+            else
+            {
+                //setSelectedCells(grid_view, sCells);
+                string check = checkCells(grid_view, sCells);
+                if (check == "Valid Selection")
+                {
+                    Console.Out.WriteLine("valid selection!!!!");
+                    primaryKeyOptions(qParser, sCells, grid_view, possibleQ);
+                    BETWEEN_entry(qParser, sCells, grid_view, possibleQ);
+                    pickQuery(possibleQ, rtb,grid_view,qParser,qs);
+                }
+                else if (check == "Invalid Selection")
+                {
+                    MessageBox.Show("Invalid selection: Please try again.");
+                }
+                else if (check == "Invalid Insert")
+                {
+                    MessageBox.Show("Invalid Insert. Last row can only be chosen by itself.");
+                }
+                else if (check == "Valid Insert")
+                {
+                    //MessageBox.Show("Invalid Insert. Last row can only be chosen by itself.");
+                    Console.Out.WriteLine("insertion!!!!");
+                    insertEntry(qParser, sCells,grid_view,rtb, qs);
+                }
+
+            }
+        }
+        //reverse engineer
+        private void button2_Click(object sender, EventArgs e)
+        {
+
+            //Console.Out.WriteLine("grid 1!!!!");
+            reversePortion(possibleQueries, dataGridView1, selectedCells, queryParser, richTextBox1, QS);
+            //Console.Out.WriteLine("grid 2!!!!");
+            reversePortion(possibleQueries2, dataGridView2, selectedCells2, queryParser2, richTextBox2, QS2);
+        }
+
+
+        private void setSelectedCells(System.Windows.Forms.DataGridView grid_view, Dictionary<int, HashSet<int>> sCells)
+        {
+            if (grid_view.RowCount > totalsize)
+            {
+                grid_view.AllowUserToAddRows = false;
+            }
+            sCells.Clear();
+            for (int row = 0; row < grid_view.RowCount; row++)
             {
                 HashSet<int> add = new HashSet<int>();
-                for (int col = 0; col < dataGridView1.ColumnCount; col++)
+                for (int col = 0; col < grid_view.ColumnCount; col++)
                 {
                    
-                    //Console.Out.WriteLine(dataGridView1[col, row].Value.ToString());
-                    
-                    if (dataGridView1[col, row].Selected == true)
+                    //Console.Out.WriteLine(grid_view[col, row].Value.ToString());
+                   // Console.Out.WriteLine(grid_view[col, row].Selected.ToString());
+                    if (grid_view[col, row].Selected == true)
                     {
                         //Console.Out.WriteLine(col + "    " + row);
                         add.Add(col);
@@ -630,7 +779,7 @@ namespace DBProject
                 }
                 if (add.Count > 0)
                 {
-                    selectedCells.Add(row, add);
+                    sCells.Add(row, add);
                 }
             }
 
@@ -638,14 +787,15 @@ namespace DBProject
 
         }
 
-        private string checkCells()
+        private string checkCells(System.Windows.Forms.DataGridView grid_view, Dictionary<int, HashSet<int>> sCells)
         {
             HashSet<int> check = new HashSet<int>();
+            check.Clear();
             bool first = true;
-            foreach (int row in selectedCells.Keys)
+            foreach (int row in sCells.Keys)
             {
-                Console.Out.Write("row: " + row + "    columns: ");
-                foreach (int col in selectedCells[row])
+               // Console.Out.Write("row: " + row + "    columns: ");
+                foreach (int col in sCells[row])
                 {
                     if (first)
                     {
@@ -658,16 +808,16 @@ namespace DBProject
                             return "Invalid Selection";
                         }
                     }
-                    Console.Out.Write(col + " ");
+                    //Console.Out.Write(col + " ");
                 }
-                Console.Out.WriteLine();
+                //Console.Out.WriteLine();
                 first = false;
             }
-            Console.Out.WriteLine(dataGridView1.RowCount - 1 + "      number of selected rows");
-            if (selectedCells.Keys.Contains(dataGridView1.RowCount - 1))
+           // Console.Out.WriteLine(grid_view.RowCount - 1 + "      number of selected rows");
+            if (sCells.Keys.Contains(grid_view.RowCount - 1))
             {
-                Console.Out.WriteLine(check.Count + "      number of selected rows");
-                if (selectedCells.Count > 1)
+               // Console.Out.WriteLine(check.Count + "      number of selected columns");
+                if (sCells.Count > 1)
                 {
                     return "Invalid Insert";
                 }
@@ -678,6 +828,38 @@ namespace DBProject
             }
             return "Valid Selection";
         }
+
+        private void dataGridView2_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void dataGridView1_CellContentClick_1(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void dataGridView1_CellContentClick_2(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void splitContainer4_Panel1_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void richTextBox1_TextChanged_1(object sender, EventArgs e)
+        {
+            sql = changedText(sender, e, richTextBox1, queryParser);
+        }
+
+        private void richTextBox2_TextChanged(object sender, EventArgs e)
+        {
+            sql2 = changedText(sender, e, richTextBox2, queryParser2);
+        }
+
+      
 
     }
 }

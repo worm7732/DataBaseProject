@@ -16,7 +16,7 @@ namespace DBProject
 {
 
 
-    class Parser
+    public class Parser
     {
         private HashSet<string> keywords = new HashSet<string>();
         public List<string> tables = new List<string>();
@@ -33,6 +33,13 @@ namespace DBProject
             keywords.Add("values");
             keywords.Add("or");
             keywords.Add("and");
+            keywords.Add("min");
+            keywords.Add("max");
+            keywords.Add(">");
+            keywords.Add(">=");
+            keywords.Add("<=");
+            keywords.Add("between");
+            keywords.Add("avg");
         }
 
         public void clear()

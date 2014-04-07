@@ -1,8 +1,2 @@
 ID|NAME|AGE|ADDRESS|SALARY
-3|Allen|25|Texas|15000.0
-1|Truman|10|Ohio|999599.0
-2|Tyson|5|Texas|150.0
-4|Jordan|7|Ne York|2000.0
-5|Max|27|Florida|8000.0
-6|Lynn|18|California|211000.0
 7|Jarod|33|Columbus|700.0

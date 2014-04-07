@@ -5,7 +5,7 @@ using System.Text;
 
 namespace DBProject
 {
-    class QueryState
+    public class QueryState
     {
         public  Dictionary<string, int> pkMap = new Dictionary<string, int>();
         public Dictionary<string, int> attMap = new Dictionary<string, int>();
