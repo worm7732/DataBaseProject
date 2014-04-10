@@ -40,6 +40,8 @@ namespace DBProject
             keywords.Add("<=");
             keywords.Add("between");
             keywords.Add("avg");
+            keywords.Add("count");
+            keywords.Add("sum");
         }
 
         public void clear()
