@@ -31,6 +31,7 @@ namespace DBProject
         Dictionary<int, HashSet<int>> selectedCells2 = new Dictionary<int, HashSet<int>>();
         Dictionary<string, long> queryTime = new Dictionary<string, long>();
         //HashSet<int> selected = new HashSet<int>();
+        string previousQuery = "";
 
         int totalsize = 0;
         string currentTable = "";
@@ -178,6 +179,7 @@ namespace DBProject
                 //Console.Out.WriteLine("running left side");
                 run_query(sql, dataGridView1, QS, queryParser);
                 fill_dataGrid(getResult(), dataGridView1, QS, queryParser);
+                previousQuery = sql;
             }
             sql2 = richTextBox2.Text;
            // Console.Out.WriteLine(sql2.Length + " " + sql2.Length);
@@ -186,6 +188,7 @@ namespace DBProject
                 //Console.Out.WriteLine("running right side");
                 run_query(sql2, dataGridView2, QS2, queryParser2);
                 fill_dataGrid(getResult(), dataGridView2, QS2, queryParser2);
+                previousQuery = sql2;
             }
             
         }
@@ -449,9 +452,14 @@ namespace DBProject
                 currentTable = qParser.tables[0];
             }
             //build attr list
-            //Console.Out.WriteLine(currentTable + "       look here!");
+           // Console.Out.WriteLine(sCells.ElementAt(0).Value.Count + "       look here!    " + currentTable);
             //Console.Out.WriteLine(DBtables[currentTable].attributes.Count + "       look here" );
-            if (DBtables[currentTable].attributes.Count == sCells.ElementAt(0).Value.Count)
+            int tableCount = 0;
+            if (DBtables.Keys.Contains(currentTable))
+            {
+                tableCount = DBtables[currentTable].attributes.Count;
+            }
+            if (tableCount == sCells.ElementAt(0).Value.Count)
             {
                 tablePART = " * ";
             }
@@ -474,7 +482,14 @@ namespace DBProject
                     }
                 }
             }
-            newSQL += tablePART + " FROM " + currentTable + " WHERE ";
+            if (qParser.colorMapping.Keys.Contains("join"))
+            {
+                newSQL += tablePART + " FROM (" + previousQuery + ") WHERE ";
+            }
+            else
+            {
+                newSQL += tablePART + " FROM " + currentTable + " WHERE ";
+            }
             return newSQL;
         }
 
@@ -539,7 +554,7 @@ namespace DBProject
                         }
                         where += "(";
                         notfirst = false;
-                        foreach (int col in sCells[row])
+                        for (int col = 0; col < grid_view.ColumnCount; col ++ )
                         {
                             if (notfirst)
                             {
@@ -601,6 +616,7 @@ namespace DBProject
                 //Console.Out.WriteLine("running left side");
                 run_query(SQL, grid_view, qs, qParser);
                 fill_dataGrid(getResult(), grid_view, qs, qParser);
+                previousQuery = SQL;
             }
 
         }
@@ -679,6 +695,7 @@ namespace DBProject
                     Console.Out.WriteLine("running left side");
                     run_query(newSQL, grid_view, qs, qParser);
                     fill_dataGrid(getResult(), grid_view, qs, qParser);
+                    previousQuery = newSQL;
                 }
             }
             else
@@ -816,6 +833,7 @@ namespace DBProject
                         rtb.Text = str;
                         run_query(str, grid_view, qs, qParser);
                         fill_dataGrid(getResult(), grid_view, qs, qParser);
+                        previousQuery = str;
                         
                     }
                      
@@ -968,7 +986,7 @@ namespace DBProject
             }
         }
 
-        private void generateJOIN(Dictionary<string, List<string>> t1, Dictionary<string, List<string>> t2)
+        private void generateJOIN(Dictionary<string, List<string>> t1, Dictionary<string, List<string>> t2, object sender, EventArgs e)
         {
             string newSQL = "SELECT ";
             bool notfirst = false;
@@ -993,14 +1011,17 @@ namespace DBProject
                 attList += dataGridView2.Columns[col].Name.ToString();
             }
             newSQL += attList + " FROM " + queryParser.tables[0] + " INNER JOIN " + queryParser2.tables[0] + " ON ";
-            Console.Out.WriteLine(newSQL + "      ?????????");
-
+            //Console.Out.WriteLine(newSQL + "      ?????????");
+            bool add = true;
             foreach (string str1 in t1.Keys)
             {
+                //Console.Out.WriteLine(str1 + "      first att");
                 List<string> check1 = t1[str1];
-                bool add = true;
+                
                 foreach (string str2 in t2.Keys)
                 {
+                    add = true;
+                    //Console.Out.WriteLine(str2 + "      att2");
                     List<string> check2 = t2[str2];
                     foreach (string val in check1)
                     {
@@ -1016,7 +1037,13 @@ namespace DBProject
                 }
 
             }
-            Console.Out.WriteLine(newSQL + "      ?????????");
+            newSQL = newSQL.Trim() + ";";
+            //Console.Out.WriteLine(newSQL + "      ?????????");
+            possibleQueries.Clear();
+            joinOptionToolStripMenuItem_Click(sender, e);
+            richTextBox1.Text = newSQL;
+            button1_Click(sender, e);
+
         }
 
 
@@ -1036,7 +1063,8 @@ namespace DBProject
                 button2_Click(sender, e);
                 char[] delim = { '|' };
                 //get left table
-                string query1 = possibleQueries[0];
+                string query1 = "Select * " + possibleQueries[0].Substring(possibleQueries[0].IndexOf("FROM"));
+                Console.Out.WriteLine(query1);
                 string arg = "/C " + path + "sqlite3 " + path + database + " \"" + query1 + "\" > " + path + "out.txt";
                 run_query(query1, dataGridView1, QS, queryParser);
                 List<string> table1 = getResult();
@@ -1075,7 +1103,7 @@ namespace DBProject
                 }
 
                 //get right table
-                string query2 = possibleQueries2[0];
+                string query2 = "Select * " + possibleQueries2[0].Substring(possibleQueries2[0].IndexOf("FROM"));
                 arg = "/C " + path + "sqlite3 " + path + database + " \"" + query2 + "\" > " + path + "out.txt";
                // run_command(arg);
                 run_query(query2, dataGridView2, QS2, queryParser2);
@@ -1110,7 +1138,7 @@ namespace DBProject
                     //}
                     //Console.Out.WriteLine();
                 }
-                generateJOIN(Table1Values, Table2Values);
+                generateJOIN(Table1Values, Table2Values,sender, e);
             }
             
             joinOP = false;

@@ -42,6 +42,9 @@ namespace DBProject
             keywords.Add("avg");
             keywords.Add("count");
             keywords.Add("sum");
+            keywords.Add("inner");
+            keywords.Add("join");
+            keywords.Add("on");
         }
 
         public void clear()
@@ -58,7 +61,7 @@ namespace DBProject
             
             foreach (char ch in sql)
             {
-                if ((ch == ' ' || ch == '\n' || ch == ',' || ch == ';' || ch == '(' || ch == ')'))
+                if ((ch == ' ' || ch == '\n' || ch == ',' || ch == ';' || ch == '(' || ch == ')' || ch == '.'))
                 {
                     string add = "";
                     if (keywords.Contains(temp.ToLower()))
