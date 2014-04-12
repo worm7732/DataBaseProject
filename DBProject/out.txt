@@ -1,4 +1,2 @@
-DEPT|EMP_ID
-IT Billing|1
-Engineering|2
-Finance|7
+D_ID
+1
