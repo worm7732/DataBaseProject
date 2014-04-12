@@ -42,23 +42,27 @@ namespace DBProject
             keywords.Add("avg");
             keywords.Add("count");
             keywords.Add("sum");
+            keywords.Add("inner");
+            keywords.Add("join");
+            keywords.Add("on");
         }
 
         public void clear()
         {
-            //keywords.Clear();
+            
             tables.Clear();
             colorMapping.Clear();
         }
 
         public void parse(string sql)
         {
-            colorMapping.Clear();
+            //colorMapping.Clear();
             string temp = "";
+            clear();
             
             foreach (char ch in sql)
             {
-                if ((ch == ' ' || ch == '\n' || ch == ',' || ch == ';' || ch == '(' || ch == ')'))
+                if ((ch == ' ' || ch == '\n' || ch == ',' || ch == ';' || ch == '(' || ch == ')' || ch == '.'))
                 {
                     string add = "";
                     if (keywords.Contains(temp.ToLower()))
