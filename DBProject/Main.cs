@@ -183,7 +183,7 @@ namespace DBProject
             }
             sql2 = richTextBox2.Text;
            // Console.Out.WriteLine(sql2.Length + " " + sql2.Length);
-            if (sql2.Length > 0)
+            if (sql2.Length > 0 && join)
             {
                 //Console.Out.WriteLine("running right side");
                 run_query(sql2, dataGridView2, QS2, queryParser2);
@@ -326,7 +326,7 @@ namespace DBProject
             string SQL = "";
             int save = rtb.SelectionStart;
             SQL = rtb.Text;
-            qParser.clear();
+           // qParser.clear();
             qParser.parse(SQL);
             foreach (string word in qParser.colorMapping.Keys)
             {
@@ -446,7 +446,7 @@ namespace DBProject
             string tablePART = "";
             currentTable = "";
             //determine table
-            //Console.Out.WriteLine(qParser.tables.Count);
+            Console.Out.WriteLine(qParser.tables.Count + "        look here for error" );
             if (qParser.tables.Count == 1)
             {
                 currentTable = qParser.tables[0];
@@ -482,6 +482,7 @@ namespace DBProject
                     }
                 }
             }
+
             if (qParser.colorMapping.Keys.Contains("join"))
             {
                 newSQL += tablePART + " FROM (" + previousQuery + ") WHERE ";
@@ -605,22 +606,6 @@ namespace DBProject
         }
 
 
-        private void pickQuery(List<String> possibleQ, System.Windows.Forms.RichTextBox rtb, System.Windows.Forms.DataGridView grid_view,Parser qParser, QueryState qs)
-        {
-            string SQL = possibleQ[possibleQ.Count - 1];
-            //Console.Out.WriteLine(SQL + "           chosen!!");
-            rtb.Text = SQL;
-            //button1_Click(sender, e);
-            if (SQL.Length > 0)
-            {
-                //Console.Out.WriteLine("running left side");
-                run_query(SQL, grid_view, qs, qParser);
-                fill_dataGrid(getResult(), grid_view, qs, qParser);
-                previousQuery = SQL;
-            }
-
-        }
-
         private bool insertEntry( Parser qParser, Dictionary<int, HashSet<int>> sCells,
             System.Windows.Forms.DataGridView grid_view, System.Windows.Forms.RichTextBox rtb, QueryState qs)
         {
@@ -687,9 +672,7 @@ namespace DBProject
                 }
                 newSQL += ");";
                 Console.Out.WriteLine(newSQL);
-                //sql = newSQL;
                 rtb.Text = newSQL;
-                //button1_Click(sender, e);
                 if (newSQL.Length > 0)
                 {
                     Console.Out.WriteLine("running left side");
@@ -822,9 +805,6 @@ namespace DBProject
                 {
                    // Console.Out.WriteLine("valid selection!!!!");
                     primaryKeyOptions(qParser, sCells, grid_view, possibleQ);
-                    
-                    //fillSQLOption(possibleQ, SQLgrid);
-                    //pickQuery(possibleQ, rtb,grid_view,qParser,qs);
                     
                     if (!joinOP)
                     {

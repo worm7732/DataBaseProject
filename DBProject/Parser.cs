@@ -49,15 +49,16 @@ namespace DBProject
 
         public void clear()
         {
-            //keywords.Clear();
+            
             tables.Clear();
             colorMapping.Clear();
         }
 
         public void parse(string sql)
         {
-            colorMapping.Clear();
+            //colorMapping.Clear();
             string temp = "";
+            clear();
             
             foreach (char ch in sql)
             {
