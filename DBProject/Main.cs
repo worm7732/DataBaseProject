@@ -454,7 +454,9 @@ namespace DBProject
             if (qParser.colorMapping.Keys.Contains("JOIN"))
             {
                 Console.Out.WriteLine("JOIN is in query");
-                newSQL += tablePART + " FROM (" + previousQuery + ") WHERE ";
+                //Console.Out.WriteLine(previousQuery + " this was the previous query");
+                //Console.Out.WriteLine(previousQuery.Replace(";",""));
+                newSQL += tablePART + " FROM (" + previousQuery.Replace(";", "") + ") WHERE ";
             }
             else
             {
@@ -480,7 +482,7 @@ namespace DBProject
                 where += "(";
                 notfirst = false;
                 needOR = true;
-                foreach (int col in sCells[row])
+                for (int col = 0; col < grid_view.ColumnCount; col++ )
                 {
                     if (notfirst)
                     {
@@ -576,6 +578,8 @@ namespace DBProject
         {
             char[] delim = { '|' };
             //get left table
+            //Console.Out.WriteLine(completeQuery);
+            // Console.Out.WriteLine(completeQuery.Replace
             string query = "Select * " + completeQuery.Substring(completeQuery.IndexOf("FROM"));
             Console.Out.WriteLine(query + "      !!!!!");
             string arg = "/C " + path + "sqlite3 " + path + database + " \"" + query + "\" > " + path + "out.txt";
@@ -616,32 +620,66 @@ namespace DBProject
             run_command(arg);
             List<string> answer = getResult();
             int total = answer.Count;
-
             string startSQL = pkQUERY.Substring(0,pkQUERY.IndexOf("WHERE") + 5) + " ";
             //Console.Out.WriteLine(startSQL);
+            string middle = pkQUERY.Substring(pkQUERY.IndexOf("FROM"), pkQUERY.IndexOf("WHERE") - pkQUERY.IndexOf("FROM")).Replace(";", "");
             foreach (string att in TableValues.Keys)
             {
+                checkTotal(startSQL + att + " = (SELECT MAX(" + att + ") " + middle + ");", total, answer, possibleQ);
+                checkTotal(startSQL + att + " = (SELECT MIN(" + att + ") " + middle + ");", total, answer, possibleQ);
+                checkTotal(startSQL + att + " >= (SELECT AVG(" + att + ") " + middle + ");", total, answer, possibleQ);
+                checkTotal(startSQL + att + " <= (SELECT AVG(" + att + ") " + middle + ");", total, answer, possibleQ);
+                List<string>  allOfOneKind = new List<string>();
                 foreach (string val in TableValues[att])
                 {
                     string finalSQL = startSQL + att + " = " + "'" + val + "';";
                     //Console.Out.WriteLine(finalSQL);
                     checkTotal(finalSQL, total, answer, possibleQ);
+                    allOfOneKind.Add(val);
+                    checkTotal(startSQL + att + " >= '" + val + "';", total, answer, possibleQ);
+                    checkTotal(startSQL + att + " <= '" + val + "';", total, answer, possibleQ);
+
+                    foreach (string val1 in TableValues[att])
+                    {
+                        if (val != val1)
+                        {
+                            checkTotal(startSQL + att + " BETWEEN '" + val + "' and '" + val1 + "';", total, answer, possibleQ);
+                            checkTotal(startSQL + att + " >= '" + val + "' and " + att + " <= '" + val1 + "';", total, answer, possibleQ);
+                        }
+                    }
+
                 }
+                bool notfirst = false;
+                string end = "";
+                foreach (string str in allOfOneKind)
+                {
+                    if (notfirst)
+                    {
+                        end += " or ";
+                    }
+                    notfirst = true;
+                    end += att + " = '" + str + "'";
+                }
+                string trySQL = startSQL + end + ";";
+                //Console.Out.WriteLine(finalSQL);
+                checkTotal(trySQL, total, answer, possibleQ);
             }
-
-
         }
 
         private void checkTotal(string check, int total, List<string> answer, List<String> possibleQ)
         {
+            //Console.Out.WriteLine(check);
             string arg = "/C " + path + "sqlite3 " + path + database + " \"" + check + "\" > " + path + "out.txt";
             run_command(arg);
             List<string> myAnswer= getResult();
             if (myAnswer.Count == total)
             {
                 bool correct = true;
-                foreach(string str in myAnswer){
-                    if(!answer.Contains(str)){
+                foreach (string str in answer)
+                {
+
+                    if (!myAnswer.Contains(str))
+                    {
                         correct = false;
                     }
                 }
@@ -845,6 +883,7 @@ namespace DBProject
             }
             newSQL += attList + " FROM " + queryParser.tables[0] + " INNER JOIN " + queryParser2.tables[0] + " ON ";
             bool add = true;
+            Console.Out.WriteLine(t1.Count + " t1.count       t2.coutn = " + t2.Count);
             foreach (string str1 in t1.Keys)
             {
                 List<string> check1 = t1[str1];
@@ -854,6 +893,7 @@ namespace DBProject
                     List<string> check2 = t2[str2];
                     foreach (string val in check1)
                     {
+                        //Console.Out.WriteLine(val + " = the thing to be checked");
                         if(!check2.Contains(val))
                         {
                             add = false;
@@ -908,17 +948,21 @@ namespace DBProject
                         if (row == 0)
                         {
                             attName = temp[row][col];
+                            //Console.Out.Write(attName + ": ");
                         }
                         else
                         {
                             add.Add(temp[row][col]);
+                            //Console.Out.Write(temp[row][col] + ", ");
                         }
                         
                     }
+                   /// Console.Out.WriteLine("");
                     Table1Values.Add(attName, add);
                 }
 
                 //get right table
+                //Console.Out.WriteLine("table2");
                 string query2 = "Select * " + possibleQueries2[0].Substring(possibleQueries2[0].IndexOf("FROM"));
                 arg = "/C " + path + "sqlite3 " + path + database + " \"" + query2 + "\" > " + path + "out.txt";
                // run_command(arg);
@@ -938,13 +982,16 @@ namespace DBProject
                         if (row == 0)
                         {
                             attName = temp[row][col];
+                            //Console.Out.Write(attName + ": ");
                         }
                         else
                         {
                             add.Add(temp[row][col]);
+                            //Console.Out.Write(temp[row][col] + ", ");
                         }
 
                     }
+                    //Console.Out.WriteLine("");
                     Table2Values.Add(attName, add);
                 }
                 generateJOIN(Table1Values, Table2Values,sender, e);
