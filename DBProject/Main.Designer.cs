@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.panel1 = new System.Windows.Forms.Panel();
+            this.button3 = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.button1 = new System.Windows.Forms.Button();
@@ -36,6 +37,8 @@
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.createDatabaseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.joinOptionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.listBox1 = new System.Windows.Forms.ListBox();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
@@ -49,9 +52,8 @@
             this.splitContainer6 = new System.Windows.Forms.SplitContainer();
             this.dataGridView2 = new System.Windows.Forms.DataGridView();
             this.dataGridView4 = new System.Windows.Forms.DataGridView();
-            this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.joinOptionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.button3 = new System.Windows.Forms.Button();
+            this.advancedQueryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.panel1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -86,6 +88,7 @@
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.checkBox1);
             this.panel1.Controls.Add(this.button3);
             this.panel1.Controls.Add(this.button2);
             this.panel1.Controls.Add(this.textBox1);
@@ -96,6 +99,16 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(1062, 29);
             this.panel1.TabIndex = 0;
+            // 
+            // button3
+            // 
+            this.button3.Location = new System.Drawing.Point(852, 3);
+            this.button3.Name = "button3";
+            this.button3.Size = new System.Drawing.Size(112, 23);
+            this.button3.TabIndex = 5;
+            this.button3.Text = "Reverse Join";
+            this.button3.UseVisualStyleBackColor = true;
+            this.button3.Click += new System.EventHandler(this.button3_Click);
             // 
             // button2
             // 
@@ -158,6 +171,22 @@
             this.createDatabaseToolStripMenuItem.Size = new System.Drawing.Size(168, 22);
             this.createDatabaseToolStripMenuItem.Text = "Create Database...";
             this.createDatabaseToolStripMenuItem.Click += new System.EventHandler(this.createDatabaseToolStripMenuItem_Click);
+            // 
+            // viewToolStripMenuItem
+            // 
+            this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.joinOptionToolStripMenuItem,
+            this.advancedQueryToolStripMenuItem});
+            this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
+            this.viewToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
+            this.viewToolStripMenuItem.Text = "View";
+            // 
+            // joinOptionToolStripMenuItem
+            // 
+            this.joinOptionToolStripMenuItem.Name = "joinOptionToolStripMenuItem";
+            this.joinOptionToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
+            this.joinOptionToolStripMenuItem.Text = "Join Option";
+            this.joinOptionToolStripMenuItem.Click += new System.EventHandler(this.joinOptionToolStripMenuItem_Click);
             // 
             // splitContainer1
             // 
@@ -331,30 +360,23 @@
             this.dataGridView4.Size = new System.Drawing.Size(362, 142);
             this.dataGridView4.TabIndex = 0;
             // 
-            // viewToolStripMenuItem
+            // advancedQueryToolStripMenuItem
             // 
-            this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.joinOptionToolStripMenuItem});
-            this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
-            this.viewToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
-            this.viewToolStripMenuItem.Text = "View";
+            this.advancedQueryToolStripMenuItem.Name = "advancedQueryToolStripMenuItem";
+            this.advancedQueryToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
+            this.advancedQueryToolStripMenuItem.Text = "Advanced Query";
+            this.advancedQueryToolStripMenuItem.Click += new System.EventHandler(this.advancedQueryToolStripMenuItem_Click);
             // 
-            // joinOptionToolStripMenuItem
+            // checkBox1
             // 
-            this.joinOptionToolStripMenuItem.Name = "joinOptionToolStripMenuItem";
-            this.joinOptionToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.joinOptionToolStripMenuItem.Text = "Join Option";
-            this.joinOptionToolStripMenuItem.Click += new System.EventHandler(this.joinOptionToolStripMenuItem_Click);
-            // 
-            // button3
-            // 
-            this.button3.Location = new System.Drawing.Point(852, 3);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(112, 23);
-            this.button3.TabIndex = 5;
-            this.button3.Text = "Reverse Join";
-            this.button3.UseVisualStyleBackColor = true;
-            this.button3.Click += new System.EventHandler(this.button3_Click);
+            this.checkBox1.AutoSize = true;
+            this.checkBox1.Location = new System.Drawing.Point(634, 4);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(77, 17);
+            this.checkBox1.TabIndex = 6;
+            this.checkBox1.Text = "Alter Table";
+            this.checkBox1.UseVisualStyleBackColor = true;
+            this.checkBox1.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
             // 
             // Main
             // 
@@ -429,6 +451,8 @@
         private System.Windows.Forms.ToolStripMenuItem viewToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem joinOptionToolStripMenuItem;
         private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.ToolStripMenuItem advancedQueryToolStripMenuItem;
+        private System.Windows.Forms.CheckBox checkBox1;
     }
 }
 

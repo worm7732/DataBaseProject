@@ -1,3 +1,7 @@
-ID|NAME|AGE|ADDRESS|SALARY
-7|Jarod|33|Columbus|700.0
-8|Paul|32|California|20000.0
+D_ID|DEPT|EMP_ID
+1|IT Billing|1
+2|Engineering|2
+3|Finance|7
+1000|Unknown|2000
+9999|Delete|500
+500|x|1

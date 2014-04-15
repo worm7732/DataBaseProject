@@ -45,6 +45,9 @@ namespace DBProject
             keywords.Add("inner");
             keywords.Add("join");
             keywords.Add("on");
+            keywords.Add("update");
+            keywords.Add("set");
+            keywords.Add("delete");
         }
 
         public void clear()
